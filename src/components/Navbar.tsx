@@ -4,6 +4,12 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+import CloseIcon from '@/components/ui/CloseIcon';
+
+
+// ---------------------------------------------------
+// --- SUPER IMPORTANTE -> CAMBIAR WP POR CONTACTO ---
+// ---------------------------------------------------
 function WhatsAppIcon() {
   return (
     <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current" aria-hidden>
@@ -21,20 +27,14 @@ function MenuIcon() {
   );
 }
 
-function CloseIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current" aria-hidden>
-      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-    </svg>
-  );
-}
-
 const navLinks = [
   { href: "/servicios", label: "Servicios" },
+  { href: "/maquila", label: "Maquila"},
   { href: "#certificaciones", label: "Certificaciones" },
+  { href: "/sectores", label: "Sectores"},
   { href: "#nosotros", label: "Nosotros" },
-  { href: "/catalogo", label: "Catálogo" },
-  { href: "/exportacion", label: "Export" },
+  // { href: "/catalogo", label: "Catálogo" },
+  { href: "/exportacion", label: "Internacional" },
 ];
 
 export function Navbar() {
