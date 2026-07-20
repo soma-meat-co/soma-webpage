@@ -15,7 +15,7 @@ export default function HomePage() {
       <AboutSection />
       <ServicesSection />
       <CertificationsSection />
-      <MarketsSection />
+      {/* <MarketsSection /> */}
       <SpeciesSection />
       <CTASection />
     </main>

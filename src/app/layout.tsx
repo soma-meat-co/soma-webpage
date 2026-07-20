@@ -1,9 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Cormorant_SC, Barlow, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
-import { Navbar } from "@/components/Navbar";
+import Navbar from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
@@ -36,6 +35,11 @@ export const metadata: Metadata = {
     "Planta industrial certificada TIF con HACCP para exportación. Procesamos, cortamos y maquilamos carne premium bajo los estándares internacionales más exigentes — con certificación Kosher y Halal.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -48,7 +52,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Navbar />
-        {children}
+        <main className="pt-[72px]">{children}</main>
         <Footer />
       </body>
     </html>

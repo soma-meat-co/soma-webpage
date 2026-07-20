@@ -31,10 +31,9 @@ function ClockIcon() {
 
 export function Footer() {
   return (
-    <footer className="bg-[#070504] border-t-[3px] border-soma-red" style={{ padding: "64px 80px 32px" }}>
+    <footer className="bg-white border-t-[3px] border-soma-red px-6 pt-12 pb-6 md:px-20 md:pt-16 md:pb-8">
       <div
-        className="grid gap-[60px] mb-[60px]"
-        style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr" }}
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[2fr_1fr_1fr_1fr] gap-x-10 gap-y-10 md:gap-[60px] mb-10 md:mb-[60px]"
       >
         {/* Brand */}
         <div>
@@ -46,20 +45,20 @@ export function Footer() {
             className="h-[50px] w-auto object-contain mb-5"
             unoptimized
           />
-          <p className="text-[14px] text-[#666] leading-[1.75] max-w-[260px]">
+          <p className="text-[14px] text-gray-500 leading-[1.75] max-w-[260px]">
             Industria cárnica certificada con 20 años de experiencia. Procesamiento, corte, maquila y empaque bajo estándares TIF, HACCP, Kosher y Halal.
           </p>
         </div>
 
         {/* Servicios */}
         <div>
-          <h4 className="font-label text-[11px] font-bold tracking-[0.2em] uppercase text-white mb-5 pb-3 border-b border-[#222]">
+          <h4 className="font-label text-[11px] font-bold tracking-[0.2em] uppercase text-soma-black mb-5 pb-3 border-b border-gray-200">
             Servicios
           </h4>
           <ul className="flex flex-col gap-2.5 list-none">
             {["Rastro TIF", "Deshuese y Corte", "Maquila de Carne", "Empaque y Etiquetado"].map((item) => (
               <li key={item}>
-                <a href="#servicios" className="text-[14px] text-[#666] hover:text-soma-red transition-colors duration-200 no-underline">
+                <a href="#servicios" className="text-[14px] text-gray-500 hover:text-soma-red transition-colors duration-200 no-underline">
                   {item}
                 </a>
               </li>
@@ -69,7 +68,7 @@ export function Footer() {
 
         {/* Empresa */}
         <div>
-          <h4 className="font-label text-[11px] font-bold tracking-[0.2em] uppercase text-white mb-5 pb-3 border-b border-[#222]">
+          <h4 className="font-label text-[11px] font-bold tracking-[0.2em] uppercase text-soma-black mb-5 pb-3 border-b border-gray-200">
             Empresa
           </h4>
           <ul className="flex flex-col gap-2.5 list-none">
@@ -79,7 +78,7 @@ export function Footer() {
               { href: "#productos", label: "Mercados" },
             ].map((item) => (
               <li key={item.href}>
-                <a href={item.href} className="text-[14px] text-[#666] hover:text-soma-red transition-colors duration-200 no-underline">
+                <a href={item.href} className="text-[14px] text-gray-500 hover:text-soma-red transition-colors duration-200 no-underline">
                   {item.label}
                 </a>
               </li>
@@ -89,23 +88,23 @@ export function Footer() {
 
         {/* Contacto */}
         <div>
-          <h4 className="font-label text-[11px] font-bold tracking-[0.2em] uppercase text-white mb-5 pb-3 border-b border-[#222]">
+          <h4 className="font-label text-[11px] font-bold tracking-[0.2em] uppercase text-soma-black mb-5 pb-3 border-b border-gray-200">
             Contacto
           </h4>
           <ul className="flex flex-col gap-3 list-none">
-            <li className="flex items-start gap-2.5 text-[14px] text-[#666] leading-snug">
+            <li className="flex items-start gap-2.5 text-[14px] text-gray-500 leading-snug">
               <MapPinIcon />
               Teoloyucan, Estado de México C.P. 54783
             </li>
-            <li className="flex items-start gap-2.5 text-[14px] text-[#666] leading-snug">
+            <li className="flex items-start gap-2.5 text-[14px] text-gray-500 leading-snug">
               <MailIcon />
               contacto@somameat.com
             </li>
-            <li className="flex items-start gap-2.5 text-[14px] text-[#666] leading-snug">
+            <li className="flex items-start gap-2.5 text-[14px] text-gray-500 leading-snug">
               <PhoneIcon />
               56 1412 6327
             </li>
-            <li className="flex items-start gap-2.5 text-[14px] text-[#666] leading-snug">
+            <li className="flex items-start gap-2.5 text-[14px] text-gray-500 leading-snug">
               <ClockIcon />
               Lun – Vie 9:00 AM – 5:00 PM
             </li>
@@ -113,18 +112,18 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-8 border-t border-[#1a1a1a] flex-col md:flex-row gap-4">
-        <p className="text-[13px] text-[#444]">
+      <div className="flex items-center justify-between pt-8 border-t border-gray-200 flex-col md:flex-row gap-4">
+        <p className="text-[13px] text-gray-400">
           © 2025 SOMA MEAT CO —{" "}
           <a href="mailto:contacto@somameat.com" className="text-soma-red no-underline hover:underline">
             Todos los derechos reservados
           </a>
         </p>
-        <div className="flex gap-4 items-center">
+        <div className="flex flex-wrap justify-center gap-3 md:gap-4 items-center">
           {["TIF", "HACCP", "Kosher", "Halal"].map((cert) => (
             <span
               key={cert}
-              className="font-label text-[10px] font-bold tracking-[0.15em] uppercase text-[#555] border border-[#333] px-2.5 py-1 rounded-sm"
+              className="font-label text-[10px] font-bold tracking-[0.15em] uppercase text-gray-500 border border-gray-300 px-2.5 py-1 rounded-sm"
             >
               {cert}
             </span>

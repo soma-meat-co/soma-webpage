@@ -37,7 +37,7 @@ const navLinks = [
   { href: "/exportacion", label: "Internacional" },
 ];
 
-export function Navbar() {
+export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
