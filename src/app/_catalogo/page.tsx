@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Reveal } from "@/components/Reveal";
+import { Breadcrumb } from "@/components/Breadcrumb";
 
 export const metadata: Metadata = {
   title: "Catálogo de Cordero Premium — SOMA MEAT CO | TIF 422",
@@ -87,14 +88,7 @@ export default function CatalogoPage() {
         </div>
       </div>
 
-      {/* Breadcrumb */}
-      <div className="bg-soma-brown" style={{ padding: "14px 80px" }}>
-        <div className="flex items-center gap-2.5 font-label text-[11px] tracking-[0.12em] uppercase">
-          <a href="/" className="text-soma-gray hover:text-soma-red transition-colors">Inicio</a>
-          <span className="text-white/30">›</span>
-          <span className="text-white font-semibold">Catálogo</span>
-        </div>
-      </div>
+      <Breadcrumb items={[{ label: "Catálogo" }]} />
 
       {/* Species note */}
       <div className="bg-white/[0.02] border-b border-white/[0.06]" style={{ padding: "24px 80px" }}>

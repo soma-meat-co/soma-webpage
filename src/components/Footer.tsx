@@ -56,10 +56,15 @@ export function Footer() {
             Servicios
           </h4>
           <ul className="flex flex-col gap-2.5 list-none">
-            {["Rastro TIF", "Deshuese y Corte", "Maquila de Carne", "Empaque y Etiquetado"].map((item) => (
-              <li key={item}>
-                <a href="#servicios" className="text-[14px] text-gray-500 hover:text-soma-red transition-colors duration-200 no-underline">
-                  {item}
+            {[
+              { href: "/servicios#rastro", label: "Rastro TIF" },
+              { href: "/servicios#deshuese", label: "Deshuese y Corte" },
+              { href: "/servicios#maquila", label: "Maquila de Carne" },
+              { href: "/servicios#empaque", label: "Empaque y Etiquetado" },
+            ].map((item) => (
+              <li key={item.href}>
+                <a href={item.href} className="text-[14px] text-gray-500 hover:text-soma-red transition-colors duration-200 no-underline">
+                  {item.label}
                 </a>
               </li>
             ))}
@@ -73,9 +78,9 @@ export function Footer() {
           </h4>
           <ul className="flex flex-col gap-2.5 list-none">
             {[
-              { href: "#nosotros", label: "Nosotros" },
-              { href: "#certificaciones", label: "Certificaciones" },
-              { href: "#productos", label: "Mercados" },
+              { href: "/#nosotros", label: "Nosotros" },
+              { href: "/#certificaciones", label: "Certificaciones" },
+              // { href: "/#productos", label: "Mercados" },
             ].map((item) => (
               <li key={item.href}>
                 <a href={item.href} className="text-[14px] text-gray-500 hover:text-soma-red transition-colors duration-200 no-underline">
@@ -98,11 +103,15 @@ export function Footer() {
             </li>
             <li className="flex items-start gap-2.5 text-[14px] text-gray-500 leading-snug">
               <MailIcon />
-              contacto@somameat.com
+              <a href="mailto:contacto@somameat.com" className="text-gray-500 hover:text-soma-red transition-colors duration-200 no-underline">
+                contacto@somameat.com
+              </a>
             </li>
             <li className="flex items-start gap-2.5 text-[14px] text-gray-500 leading-snug">
               <PhoneIcon />
-              56 1412 6327
+              <a href="tel:+525614126327" className="text-gray-500 hover:text-soma-red transition-colors duration-200 no-underline">
+                56 1412 6327
+              </a>
             </li>
             <li className="flex items-start gap-2.5 text-[14px] text-gray-500 leading-snug">
               <ClockIcon />

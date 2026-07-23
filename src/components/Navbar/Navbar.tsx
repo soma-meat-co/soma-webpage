@@ -29,10 +29,10 @@ function MenuIcon() {
 
 const navLinks = [
   { href: "/servicios", label: "Servicios" },
-  { href: "/maquila", label: "Maquila"},
-  { href: "#certificaciones", label: "Certificaciones" },
-  { href: "/sectores", label: "Sectores"},
-  { href: "#nosotros", label: "Nosotros" },
+  //{ href: "/maquila", label: "Maquila"},
+  //{ href: "#certificaciones", label: "Certificaciones" },
+  //{ href: "/sectores", label: "Sectores"},
+  //{ href: "#nosotros", label: "Nosotros" },
   // { href: "/catalogo", label: "Catálogo" },
   { href: "/exportacion", label: "Internacional" },
 ];
