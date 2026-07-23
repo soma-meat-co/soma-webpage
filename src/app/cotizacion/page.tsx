@@ -44,7 +44,7 @@ export default function CotizacionPage() {
 
   const send = () => {
     if (!nombre || !tel) { setError("Nombre y teléfono son requeridos"); return; }
-    const msg = `🥩 COTIZACIÓN SOMA MEAT CO — TIF 422\n\n👤 ${nombre}${empresa ? " — " + empresa : ""}\n📞 ${tel}\n${tipo ? "🏢 " + tipo + "\n" : ""}\n📋 Pedido:\n• Especie: ${especie}\n• Cert: ${certs.join(", ")}\n• Cortes: ${cortes.join(", ")}\n• Volumen: ${volumen} kg\n• Frecuencia: ${freq}\n• Empaque: ${empaque}`;
+    const msg = `COTIZACIÓN SOMA MEAT CO — TIF 845\n\n${nombre}${empresa ? " — " + empresa : ""}\n${tel}\n${tipo ? tipo + "\n" : ""}\nPedido:\n- Especie: ${especie}\n- Cert: ${certs.join(", ")}\n- Cortes: ${cortes.join(", ")}\n- Volumen: ${volumen} kg\n- Frecuencia: ${freq}\n- Empaque: ${empaque}`;
     const wa = `https://wa.me/525614126327?text=${encodeURIComponent(msg)}`;
     window.open(wa, "_blank");
     setDone(true);

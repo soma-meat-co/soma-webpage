@@ -30,6 +30,8 @@ jobs:
         
       - name: Build ith Next.js
         run: npx next build
+        env:
+          DEPLOY_TARGET: github-pages
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3

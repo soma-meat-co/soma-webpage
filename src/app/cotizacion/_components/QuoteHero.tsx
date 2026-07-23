@@ -1,10 +1,11 @@
 import Image from "next/image";
+import { withBasePath } from "@/lib/basePath";
 
 export function QuoteHero() {
   return (
     <div className="relative overflow-hidden bg-soma-off-wh px-4 pt-20 pb-8 sm:px-10 sm:pt-24 sm:pb-10 md:px-20 md:pt-28 md:pb-16 h-[25vh] md:h-[33vh] border-b-[3px] border-soma-black">
       <Image
-                src="/servicios-hero.png"
+                src={withBasePath("/servicios-hero.png")}
                 alt="SOMA MEAT CO"
                 fill
                 className="object-cover object-center"

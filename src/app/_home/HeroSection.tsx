@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { withBasePath } from "@/lib/basePath";
 
 export function HeroSection() {
   const fadeUp = (delay: number) => ({
@@ -62,7 +63,7 @@ export function HeroSection() {
         </motion.h1>
         <div className="relative w-full h-[220px] sm:h-[320px] md:h-[400px] rounded-sm overflow-hidden mb-8">
           <Image
-            src="/heroImage845.jpeg"
+            src={withBasePath("/heroImage845.jpeg")}
             alt="SOMA MEAT CO"
             fill
             className="object-cover object-center"

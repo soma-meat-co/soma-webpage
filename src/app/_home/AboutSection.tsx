@@ -1,6 +1,7 @@
 import { Reveal } from "@/components/Reveal";
 import { SectionEyebrow } from "./SectionEyebrow";
 import Image from "next/image";
+import { withBasePath } from "@/lib/basePath";
 
 const pillars = [
   {
@@ -59,7 +60,7 @@ export function AboutSection() {
             />
             <div className="absolute inset-2 md:inset-3 rounded-sm overflow-hidden ring-1 ring-white/10 shadow-lg">
               <Image
-                src="/camara-kosher.jpeg"
+                src={withBasePath("/camara-kosher.jpeg")}
                 alt="SOMA MEAT CO"
                 fill
                 className="object-cover object-center"

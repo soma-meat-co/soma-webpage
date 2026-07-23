@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Reveal } from "@/components/Reveal";
 import { SectionEyebrow } from "./SectionEyebrow";
+import { withBasePath } from "@/lib/basePath";
 
 const services = [
   {
@@ -59,7 +60,7 @@ export function ServicesSection() {
             <div className="group bg-white border border-soma-black/[0.08] rounded-sm overflow-hidden shadow-sm hover:border-soma-red hover:shadow-md transition-all duration-300 h-full flex flex-col">
               <div className="relative w-full aspect-[4/3] overflow-hidden border-b-4 border-soma-red">
                 <Image
-                  src={svc.imagen}
+                  src={withBasePath(svc.imagen)}
                   alt={svc.title}
                   fill
                   className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
