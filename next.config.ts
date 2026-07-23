@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  basePath: "/soma-webpage",
+  output: "export",
+  reactStrictMode: true,
+  
+  
 };
 
 export default nextConfig;
