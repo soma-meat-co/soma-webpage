@@ -13,7 +13,7 @@ export function ExportContact() {
       </div>
       <div className="flex gap-3 sm:gap-4 flex-wrap relative z-[1] flex-shrink-0">
         <a
-          href="mailto:export@somameat.com"
+          href="mailto:contacto@somameat.com"
           className="font-label text-[12px] sm:text-[13px] font-bold tracking-[0.12em] uppercase text-soma-red bg-white border-2 border-white px-6 py-3 sm:px-9 sm:py-4 rounded-sm hover:bg-transparent hover:text-white transition-all duration-200 no-underline whitespace-nowrap"
         >
           Email Export Team

@@ -3,7 +3,6 @@ import { StatBand } from "@/components/ui/StatBand";
 import { ExportHero } from "./_components/ExportHero";
 import { ExportCertifications } from "./_components/ExportCertifications";
 import { ExportCutsSection } from "./_components/ExportCutsSection";
-import { ExportMarketsSection } from "./_components/ExportMarketsSection";
 import { ExportContact } from "./_components/ExportContact";
 import { exportStats } from "./_data";
 
@@ -19,7 +18,6 @@ export default function ExportacionPage() {
       <StatBand stats={exportStats} />
       <ExportCertifications />
       <ExportCutsSection />
-      <ExportMarketsSection />
       <ExportContact />
     </main>
   );
