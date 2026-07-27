@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 interface BreadcrumbItem {
   label: string;
   href?: string;
@@ -30,16 +32,16 @@ export function Breadcrumb({ items, variant = "dark", className }: BreadcrumbPro
   return (
     <div className={className ?? styles.wrapper} style={{ padding: "14px 80px" }}>
       <div className="flex items-center gap-2.5 font-label text-[11px] tracking-[0.12em] uppercase">
-        <a href="/" className={styles.link}>
+        <Link href="/" className={styles.link}>
           Inicio
-        </a>
+        </Link>
         {items.map((item) => (
           <span key={item.label} className="flex items-center gap-2.5">
             <span className={styles.separator}>›</span>
             {item.href ? (
-              <a href={item.href} className={styles.link}>
+              <Link href={item.href} className={styles.link}>
                 {item.label}
-              </a>
+              </Link>
             ) : (
               <span className={styles.current}>{item.label}</span>
             )}

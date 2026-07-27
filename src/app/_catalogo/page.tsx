@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 import { Breadcrumb } from "@/components/Breadcrumb";
 
@@ -160,12 +161,12 @@ export default function CatalogoPage() {
                           </span>
                         ))}
                       </div>
-                      <a
+                      <Link
                         href="/cotizacion"
                         className="font-label text-[10px] font-bold tracking-[0.1em] uppercase text-soma-red hover:underline no-underline transition-all"
                       >
                         Cotizar →
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </Reveal>
@@ -193,12 +194,12 @@ export default function CatalogoPage() {
               contáctenos. Procesamos a especificación del cliente bajo certificación TIF.
             </p>
           </div>
-          <a
+          <Link
             href="/cotizacion"
             className="font-label text-[12px] font-bold tracking-[0.12em] uppercase bg-soma-red text-white px-7 py-3.5 rounded-sm hover:bg-soma-red-dk transition-colors no-underline whitespace-nowrap flex-shrink-0"
           >
             Solicitar Corte
-          </a>
+          </Link>
         </div>
       </Reveal>
 

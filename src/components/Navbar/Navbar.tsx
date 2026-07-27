@@ -76,21 +76,21 @@ export default function Navbar() {
         <ul className="hidden md:flex items-center gap-9 list-none">
           {navLinks.map((link) => (
             <li key={link.href}>
-              <a
+              <Link
                 href={link.href}
                 className="font-label text-[13px] font-semibold tracking-[0.12em] uppercase text-soma-brown hover:text-soma-red transition-colors duration-200 no-underline"
               >
                 {link.label}
-              </a>
+              </Link>
             </li>
           ))}
           <li>
-            <a
+            <Link
               href="/cotizacion"
               className="flex items-center gap-2 bg-soma-red text-white font-label text-[13px] font-bold tracking-[0.12em] uppercase px-[22px] py-[9px] rounded-sm hover:bg-soma-red-dk transition-colors duration-200 no-underline"
             >
               Cotizar
-            </a>
+            </Link>
           </li>
           <li>
             <a
@@ -124,23 +124,23 @@ export default function Navbar() {
             <ul className="flex flex-col gap-6 list-none">
               {navLinks.map((link) => (
                 <li key={link.href}>
-                  <a
+                  <Link
                     href={link.href}
                     onClick={() => setMenuOpen(false)}
                     className="font-label text-[14px] font-semibold tracking-[0.12em] uppercase text-soma-brown hover:text-soma-red transition-colors duration-200 no-underline"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
               <li className="pt-4 border-t border-gray-100 flex flex-col gap-2">
-                <a
+                <Link
                   href="/cotizacion"
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center justify-center gap-2 bg-soma-red text-white font-label text-[13px] font-bold tracking-[0.12em] uppercase px-6 py-3 rounded-sm hover:bg-soma-red-dk transition-colors duration-200 no-underline"
                 >
                   Cotizar Ahora
-                </a>
+                </Link>
                 <a
                   href="https://wa.me/525614126327"
                   target="_blank"

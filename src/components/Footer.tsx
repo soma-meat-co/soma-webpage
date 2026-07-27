@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 function MapPinIcon() {
   return (
@@ -63,9 +64,9 @@ export function Footer() {
               { href: "/servicios#empaque", label: "Empaque y Etiquetado" },
             ].map((item) => (
               <li key={item.href}>
-                <a href={item.href} className="text-[14px] text-gray-500 hover:text-soma-red transition-colors duration-200 no-underline">
+                <Link href={item.href} className="text-[14px] text-gray-500 hover:text-soma-red transition-colors duration-200 no-underline">
                   {item.label}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
@@ -83,9 +84,9 @@ export function Footer() {
               // { href: "/#productos", label: "Mercados" },
             ].map((item) => (
               <li key={item.href}>
-                <a href={item.href} className="text-[14px] text-gray-500 hover:text-soma-red transition-colors duration-200 no-underline">
+                <Link href={item.href} className="text-[14px] text-gray-500 hover:text-soma-red transition-colors duration-200 no-underline">
                   {item.label}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>

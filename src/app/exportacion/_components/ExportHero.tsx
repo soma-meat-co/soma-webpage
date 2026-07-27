@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { withBasePath } from "@/lib/basePath";
 
 export function ExportHero() {
@@ -60,12 +61,12 @@ export function ExportHero() {
             >
               Contact Export Team
             </a>
-            <a
+            <Link
               href="/cotizacion"
               className="font-label text-[12px] sm:text-[13px] font-semibold tracking-[0.12em] uppercase text-white bg-transparent border-2 border-white/25 px-6 py-3 sm:px-9 sm:py-4 rounded-sm hover:border-white transition-all duration-200 no-underline"
             >
               Get a Quote
-            </a>
+            </Link>
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { Reveal } from "@/components/Reveal";
 import SectionDivider from "@/components/ui/SectionDivider";
@@ -243,12 +244,12 @@ export default function ServiciosPage() {
           </p>
         </div>
         <div className="flex gap-3 sm:gap-4 flex-wrap justify-center relative z-[1] flex-shrink-0">
-          <a
+          <Link
             href="/cotizacion"
             className="font-label text-[12px] sm:text-[13px] font-bold tracking-[0.1em] sm:tracking-[0.12em] uppercase text-soma-red bg-white border-2 border-white px-6 py-3 sm:px-9 sm:py-4 rounded-sm hover:bg-transparent hover:text-white transition-all duration-200 no-underline whitespace-nowrap"
           >
             Cotizar Ahora
-          </a>
+          </Link>
           <a
             href="mailto:contacto@somameat.com"
             className="font-label text-[12px] sm:text-[13px] font-semibold tracking-[0.1em] sm:tracking-[0.12em] uppercase text-white bg-transparent border-2 border-white/40 px-6 py-3 sm:px-9 sm:py-4 rounded-sm hover:border-white transition-all duration-200 no-underline whitespace-nowrap"
