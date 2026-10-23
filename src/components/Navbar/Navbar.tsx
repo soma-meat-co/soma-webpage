@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
+import { UserProvider } from "@/lib/core/context/userContext";
 
 import CloseIcon from '@/components/ui/CloseIcon';
+import SomaLogo from "@/assets/icons/soma-logo.svg";
 
 
 // ---------------------------------------------------
@@ -37,7 +38,7 @@ const navLinks = [
   { href: "/exportacion", label: "Internacional" },
 ];
 
-export default function Navbar() {
+export default function Navbar({ isDms, role, name } : {isDms: boolean, role?: string , name?: string}) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -60,49 +61,52 @@ export default function Navbar() {
         }}
       >
         <Link href="/" className="flex-shrink-0">
-          <Image
-            src="https://i0.wp.com/somameat.com/wp-content/uploads/2024/08/cropped-cropped-soma-logo-2-1.png?fit=300%2C123&ssl=1"
-            alt="SOMA MEAT CO"
-            width={148}
-            height={60}
+          <SomaLogo
+            role="img"
+            aria-label="SOMA MEAT CO"
             className="object-contain transition-all duration-300"
             style={{ height: scrolled ? "36px" : "44px", width: "auto" }}
-            priority
-            unoptimized
           />
         </Link>
 
         {/* Desktop links */}
-        <ul className="hidden md:flex items-center gap-9 list-none">
-          {navLinks.map((link) => (
-            <li key={link.href}>
+        { isDms ? (
+          <div className="hidden md:flex items-center gap-9">
+            <p className='font-label text-[18px] font-semibold tracking-[0.12em] uppercase text-soma-black'>{role ?? 'Sistema Interno'}{name ? ` : ${name}` : ''}</p>
+          </div>
+        ) : (
+          <ul className="hidden md:flex items-center gap-9 list-none">
+            {navLinks.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="font-label text-[13px] font-semibold tracking-[0.12em] uppercase text-soma-brown hover:text-soma-red transition-colors duration-200 no-underline"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+            <li>
               <Link
-                href={link.href}
-                className="font-label text-[13px] font-semibold tracking-[0.12em] uppercase text-soma-brown hover:text-soma-red transition-colors duration-200 no-underline"
+                href="/cotizacion"
+                className="flex items-center gap-2 bg-soma-red text-white font-label text-[13px] font-bold tracking-[0.12em] uppercase px-[22px] py-[9px] rounded-sm hover:bg-soma-red-dk transition-colors duration-200 no-underline"
               >
-                {link.label}
+                Cotizar
               </Link>
             </li>
-          ))}
-          <li>
-            <Link
-              href="/cotizacion"
-              className="flex items-center gap-2 bg-soma-red text-white font-label text-[13px] font-bold tracking-[0.12em] uppercase px-[22px] py-[9px] rounded-sm hover:bg-soma-red-dk transition-colors duration-200 no-underline"
-            >
-              Cotizar
-            </Link>
-          </li>
-          <li>
-            <a
-              href="https://wa.me/525614126327"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 border border-soma-brown/40 text-soma-brown font-label text-[13px] font-bold tracking-[0.12em] uppercase px-[22px] py-[9px] rounded-sm hover:border-soma-red hover:text-soma-red transition-colors duration-200 no-underline"
-            >
-              <WhatsAppIcon />
-            </a>
-          </li>
-        </ul>
+            <li>
+              <a
+                href="https://wa.me/525614126327"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 border border-soma-brown/40 text-soma-brown font-label text-[13px] font-bold tracking-[0.12em] uppercase px-[22px] py-[9px] rounded-sm hover:border-soma-red hover:text-soma-red transition-colors duration-200 no-underline"
+              >
+                <WhatsAppIcon />
+              </a>
+            </li>
+          </ul>
+        )
+        }
 
         {/* Mobile hamburger */}
         <button
@@ -114,7 +118,10 @@ export default function Navbar() {
         </button>
       </nav>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer 
+        * TODO: NEEDS TO BE MODIFIED FOR INTERNAL DMS
+        *
+        */}
       {menuOpen && (
         <div className="fixed inset-0 z-[99] md:hidden" onClick={() => setMenuOpen(false)}>
           <div

@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Cormorant_SC, Barlow, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
@@ -51,9 +49,7 @@ export default function RootLayout({
       className={`${geistMono.variable} ${cormorantSC.variable} ${barlow.variable} ${barlowCondensed.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">
-        <Navbar />
         <main className="pt-[72px]">{children}</main>
-        <Footer />
       </body>
     </html>
   );
