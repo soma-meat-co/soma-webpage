@@ -17,7 +17,7 @@ export function ExportCutsSection() {
       </Reveal>
       <Reveal delay={0.2}>
         <p className="text-[14px] sm:text-[16px] font-light leading-[1.7] sm:leading-[1.75] text-soma-gray max-w-[540px] mb-10 sm:mb-[60px]">
-          All cuts are processed and packed at our TIF 422 facility. Vacuum or MAP packaging,
+          All cuts are processed and packed at our TIF 845 facility. Vacuum or MAP packaging,
           custom labeling, and full export documentation available.
         </p>
       </Reveal>

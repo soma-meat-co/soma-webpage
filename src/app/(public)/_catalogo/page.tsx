@@ -4,8 +4,8 @@ import { Reveal } from "@/components/Reveal";
 import { Breadcrumb } from "@/components/Breadcrumb";
 
 export const metadata: Metadata = {
-  title: "Catálogo de Cordero Premium — SOMA MEAT CO | TIF 422",
-  description: "Catálogo de cortes de cordero premium certificados TIF 422. Canal entera, pierna, rack, costillar y más. Disponibles con certificación Kosher y Halal.",
+  title: "Catálogo de Cordero Premium — SOMA MEAT CO | TIF 845",
+  description: "Catálogo de cortes de cordero premium certificados TIF 845. Canal entera, pierna, rack, costillar y más. Disponibles con certificación Kosher y Halal.",
 };
 
 const cuts = [
@@ -72,7 +72,7 @@ export default function CatalogoPage() {
           <div className="flex items-center gap-3 mb-4">
             <span className="block w-8 h-[1px] bg-soma-red" />
             <span className="font-label text-[11px] font-semibold tracking-[0.25em] uppercase text-soma-red">
-              TIF 422 · Kosher · Halal
+              TIF 845 · Kosher · Halal
             </span>
           </div>
           <h1
@@ -83,7 +83,7 @@ export default function CatalogoPage() {
             <em className="text-soma-red not-italic">Cordero Premium</em>
           </h1>
           <p className="text-[16px] font-light leading-[1.75] text-soma-gray-lt max-w-[540px]">
-            Todos los cortes disponibles bajo certificación TIF 422. Canal entera, piezas primarias
+            Todos los cortes disponibles bajo certificación TIF 845. Canal entera, piezas primarias
             y cortes especializados para cada segmento de mercado.
           </p>
         </div>
@@ -107,7 +107,7 @@ export default function CatalogoPage() {
             </div>
           ))}
           <span className="font-label text-[11px] tracking-[0.1em] uppercase text-soma-gray ml-2">
-            · Todos con certificación TIF 422
+            · Todos con certificación TIF 845
           </span>
         </div>
       </div>
@@ -207,7 +207,7 @@ export default function CatalogoPage() {
       <div className="bg-soma-brown" style={{ padding: "56px 80px" }}>
         <div className="grid gap-8" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
           {[
-            { cert: "TIF 422", sub: "Tipo Inspección Federal", body: "Máximo estándar de calidad e inocuidad en la industria cárnica mexicana." },
+            { cert: "TIF 845", sub: "Tipo Inspección Federal", body: "Máximo estándar de calidad e inocuidad en la industria cárnica mexicana." },
             { cert: "HACCP", sub: "Para Exportación", body: "Sistema de análisis de peligros habilitado para mercados internacionales." },
             { cert: "Kosher", sub: "Supervisión Rabínica", body: "Proceso bajo supervisión rabínica certificada en todo el ciclo." },
             { cert: "Halal", sub: "Ley Islámica", body: "Procesamiento conforme a los principios y requisitos de la ley islámica." },

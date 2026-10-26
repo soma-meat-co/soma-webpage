@@ -2,7 +2,7 @@ export const steps = ["Producto", "Cortes", "Volumen", "Contacto"];
 
 export const especies = [
   { icon: "🐑", name: "Cordero / Ovino", desc: "Canal entera y todos los cortes de cordero" },
-  { icon: "🐂", name: "Res / Bovino", desc: "Cortes premium de res bajo TIF 422" },
+  { icon: "🐂", name: "Res / Bovino", desc: "Cortes premium de res bajo TIF 845" },
   { icon: "🐖", name: "Cerdo / Porcino", desc: "Procesamiento completo porcino TIF" },
   { icon: "🐓", name: "Ave / Pollo", desc: "Línea avícola con estándares TIF" },
 ];

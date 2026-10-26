@@ -1,6 +1,6 @@
 export const exportStats = [
   { num: "20+", label: "Years in Operation" },
-  { num: "TIF 422", label: "Federal Certification" },
+  { num: "TIF 845", label: "Federal Certification" },
   { num: "HACCP", label: "Export Authorization" },
   { num: "4", label: "Active Certifications" },
 ];

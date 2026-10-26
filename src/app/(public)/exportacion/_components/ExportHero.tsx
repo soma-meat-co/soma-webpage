@@ -50,7 +50,7 @@ export function ExportHero() {
             for Global Markets
           </h1>
           <p className="text-[14px] sm:text-[17px] font-light leading-[1.7] sm:leading-[1.8] text-soma-gray-lt mb-8 sm:mb-12">
-            TIF 422 certified processing plant with HACCP authorization for export. Premium lamb
+            TIF 845 certified processing plant with HACCP authorization for export. Premium lamb
             and meat cuts available with Kosher and Halal certification — ready for international
             buyers.
           </p>

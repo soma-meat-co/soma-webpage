@@ -54,7 +54,7 @@ export default function CotizacionPage() {
     setDone(false);
     setStep(0);
     setEspecie("");
-    setCerts(["TIF 422"]);
+    setCerts(["TIF 845"]);
     setCortes([]);
     setFreq("");
     setEmpaque("");
