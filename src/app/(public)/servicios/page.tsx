@@ -42,7 +42,7 @@ const services = [
     id: "deshuese",
     title: "Deshuese y Corte",
     subtitle: "Precisión en Cada Canal",
-    imagen: "/corte-deshuese.png",
+    imagen: "/corte-deshuese.webp",
     desc: "Corte especializado de canales con estándares de precisión para el sector restaurantero, hotelero y de supermercados. Cortes gourmet o industriales a especificación exacta del cliente.",
     specs: [
       { title: "Cortes Premium", body: "Rack, lomo, pierna, paleta y cortes especiales a especificación del cliente." },
@@ -56,7 +56,7 @@ const services = [
     id: "maquila",
     title: "Maquila de Carne",
     subtitle: "Su Marca, Nuestro Proceso",
-    imagen: "/maquila.png",
+    imagen: "/maquila.webp",
     desc: "Servicio de maquila bajo marca propia del cliente. Procesamos, cortamos y preparamos conforme a sus especificaciones técnicas, con trazabilidad total y certificación TIF en cada lote.",
     specs: [
       { title: "Bajo Tu Marca", body: "Procesamos y empacamos con la marca y etiqueta de su empresa." },
@@ -70,7 +70,7 @@ const services = [
     id: "empaque",
     title: "Empaque y Etiquetado",
     subtitle: "Presentación para Cualquier Mercado",
-    imagen: "/empacado.png",
+    imagen: "/empacado.webp",
     desc: "Empaque al vacío, en atmósfera modificada o a granel. Etiquetado conforme a normativa NOM para mercado nacional o con especificaciones de exportación para mercados internacionales.",
     specs: [
       { title: "Vacío y MAP", body: "Empaque al vacío y en atmósfera modificada para máxima vida de anaquel." },
@@ -94,7 +94,7 @@ export default function ServiciosPage() {
       {/* Page Hero */}
       <div className="relative flex items-end overflow-hidden h-[25vh] md:h-[40vh] min-h-[260px] px-4 pb-5 pt-20 sm:px-10 sm:pb-8 sm:pt-24 md:px-20 md:pb-10 md:pt-28">
         <Image
-          src={withBasePath("/servicios-hero.png")}
+          src={withBasePath("/servicios-hero.webp")}
           alt="SOMA MEAT CO"
           fill
           className="object-cover object-center"

@@ -16,7 +16,7 @@ export const exportMarkets = [
 
 export const certifications = [
   {
-    cert: "TIF 422",
+    cert: "TIF 845",
     full: "Tipo Inspección Federal",
     body: "Mexico's highest federal meat quality standard. Permanent veterinary inspection, full animal traceability and mandatory SENASICA-SAGARPA compliance on every processed lot.",
   },

@@ -23,7 +23,7 @@ export function ExportHero() {
       <div className="relative z-[3] grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center w-full max-w-[1200px] mx-auto">
         <div className="relative order-1 md:order-2 w-full h-[220px] sm:h-[300px] md:h-[440px] rounded-sm overflow-hidden">
           <Image
-            src={withBasePath("/servicios-hero.png")}
+            src={withBasePath("/servicios-hero.webp")}
             alt="SOMA MEAT CO — Export Division"
             fill
             className="object-cover object-center"

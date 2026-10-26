@@ -14,19 +14,19 @@ const services = [
     num: "02",
     title: "Deshuese y Corte",
     body: "Corte especializado de canales con estándares de precisión para el sector restaurantero, hotelero y de supermercados. Cortes gourmet o industriales a especificación del cliente.",
-    imagen: "/corte-deshuese.png",
+    imagen: "/corte-deshuese.webp",
   },
   {
     num: "03",
     title: "Maquila de Carne",
     body: "Servicio de maquila bajo marca propia del cliente. Procesamos, cortamos y preparamos conforme a sus especificaciones, con trazabilidad total y certificación TIF en cada lote.",
-    imagen: "/maquila.png",
+    imagen: "/maquila.webp",
   },
   {
     num: "04",
     title: "Empaque y Etiquetado",
     body: "Empaque al vacío, en atmósfera modificada o a granel. Etiquetado conforme a normativa NOM para mercado nacional o con especificaciones de exportación internacional.",
-    imagen: "/empacado.png",
+    imagen: "/empacado.webp",
   },
 ];
 

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { withBasePath } from "@/lib/basePath";
 
 function MapPinIcon() {
   return (
@@ -39,7 +40,7 @@ export function Footer() {
         {/* Brand */}
         <div>
           <Image
-            src="https://i0.wp.com/somameat.com/wp-content/uploads/2024/08/cropped-cropped-soma-logo-2-1.png?fit=300%2C123&ssl=1"
+            src={withBasePath("/soma-logo.png")}
             alt="SOMA MEAT CO"
             width={148}
             height={60}
