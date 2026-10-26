@@ -8,7 +8,7 @@ import { withBasePath } from "@/lib/basePath";
 
 export const metadata: Metadata = {
   title: "Servicios TIF — SOMA MEAT CO | Rastro · Corte · Maquila · Empaque",
-  description: "Planta TIF 422 con capacidad industrial completa: rastro, deshuese, maquila y empaque bajo estándares internacionales HACCP, Kosher y Halal.",
+  description: "Planta TIF 845 con capacidad industrial completa: rastro, deshuese, maquila y empaque bajo estándares internacionales HACCP, Kosher y Halal.",
 };
 
 function SectionEyebrow({ children }: { children: React.ReactNode }) {
@@ -221,7 +221,7 @@ export default function ServiciosPage() {
                   <h3 className="font-display text-[22px] sm:text-[28px] md:text-[32px] font-semibold text-white mb-2">{svc.title}</h3>
                   <div className="w-10 h-0.5 bg-soma-red mb-3" />
                   <p className="font-label text-[11px] sm:text-[12px] tracking-[0.12em] uppercase text-soma-gray">
-                    Certificado TIF 422 · HACCP
+                    Certificado TIF 845 · HACCP
                   </p>
                 </div>
               </div>
