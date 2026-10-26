@@ -3,7 +3,7 @@ import { privateEnv } from '@/lib/privateEnv';
 import { createClient } from '@supabase/supabase-js';
 
 const url: string = publicEnv.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRoleKey: string = privateEnv.SUPABASE_SERVICE_ROLE_KEY;
+const serviceRoleKey: string = privateEnv.SUPABASE_SECRET_KEY;
 
 const adminClient = createClient(url, serviceRoleKey, {
     auth: {
