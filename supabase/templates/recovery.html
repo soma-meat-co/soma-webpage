@@ -1,0 +1,68 @@
+<!--
+  Plantilla del correo de recuperación de contraseña del SOMA DMS.
+
+  Local: config.toml → [auth.email.template.recovery] (requiere `supabase stop && supabase start`).
+  Producción: copiar este HTML en Dashboard → Authentication → Emails → Templates → Reset password.
+
+  El link usa token_hash (no {{ .ConfirmationURL }}) para que el token NO se consuma al abrir
+  el correo: lo verifica /DMS/reset-password solo cuando el usuario envía su contraseña nueva.
+  Esto evita que escáneres de correo (Outlook Safe Links, etc.) invaliden el link.
+
+  {{ .RedirectTo }} = RESET_PASSWORD_REDIRECT_URL de la Edge Function request-password-reset
+  (ej. http://127.0.0.1:3000/DMS/reset-password).
+-->
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recupera tu contraseña de SOMA DMS</title>
+  </head>
+  <body style="margin:0; padding:0; background-color:#F5F1EC; font-family:'Plus Jakarta Sans', Arial, Helvetica, sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F5F1EC; padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px; background-color:#ffffff; border-radius:8px; overflow:hidden;">
+            <tr>
+              <td style="background-color:#0D0B09; padding:24px 32px;">
+                <p style="margin:0; color:#AC1F25; font-size:20px; font-weight:700; letter-spacing:2px;">SOMA MEAT CO.</p>
+                <p style="margin:4px 0 0; color:#A7A9AC; font-size:12px;">Sistema interno de documentos</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px;">
+                <h1 style="margin:0 0 16px; color:#3C2415; font-size:22px;">Recupera tu contraseña</h1>
+                <p style="margin:0 0 16px; color:#3C2415; font-size:14px; line-height:1.6;">
+                  Recibimos una solicitud para cambiar la contraseña de tu cuenta en el sistema
+                  interno de documentos de SOMA MEAT CO. Crea una contraseña nueva con el siguiente botón.
+                </p>
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+                  <tr>
+                    <td style="background-color:#AC1F25; border-radius:6px;">
+                      <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery"
+                         style="display:inline-block; padding:12px 24px; color:#ffffff; font-size:14px; font-weight:600; text-decoration:none;">
+                        Crear contraseña nueva
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:0 0 8px; color:#A7A9AC; font-size:12px; line-height:1.6;">
+                  Tu usuario es <strong style="color:#3C2415;">{{ .Email }}</strong>.
+                  Este link es de un solo uso y tiene vigencia limitada.
+                </p>
+                <p style="margin:0; color:#A7A9AC; font-size:12px; line-height:1.6;">
+                  Si no pediste este cambio, ignora este correo: tu contraseña actual sigue funcionando.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 32px; border-top:1px solid #D4D5D7;">
+                <p style="margin:0; color:#A7A9AC; font-size:11px;">TIF 845 · HACCP · Acceso restringido a personal autorizado</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

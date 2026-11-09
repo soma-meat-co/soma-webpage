@@ -38,7 +38,26 @@ const navLinks = [
   { href: "/exportacion", label: "Internacional" },
 ];
 
-export default function Navbar({ isDms, role, name } : {isDms: boolean, role?: string , name?: string}) {
+interface NavbarProps {
+  isDms: boolean;
+  role?: string;
+  name?: string;
+  dmsAction?: React.ReactNode;
+}
+
+/**
+ * Barra de navegación del sitio público y del DMS.
+ *
+ * @param isDms - `true` para mostrar la versión del DMS
+ * @param role - rol del usuario, solo en el DMS
+ * @param name - nombre del usuario, solo en el DMS
+ * @param dmsAction - acción del DMS. Llega por prop para que el sitio público
+ *   no cargue Supabase al importar este componente
+ * @returns la barra de navegación
+ * @example
+ * <Navbar isDms={true} role={user.role} name={user.name} dmsAction={<LogoutButton />} />
+ */
+export default function Navbar({ isDms, role, name, dmsAction }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -51,9 +70,8 @@ export default function Navbar({ isDms, role, name } : {isDms: boolean, role?: s
   return (
     <>
       <nav
-        className="fixed top-0 left-0 w-full z-[100] flex items-center justify-between bg-white border-b-[3px] border-soma-red transition-all duration-300"
+        className={`fixed top-0 left-0 w-full z-[100] flex items-center justify-between bg-white border-b-[3px] border-soma-red transition-all duration-300 ${isDms ? "px-4 md:px-12" : "px-12"}`}
         style={{
-          padding: "0 48px",
           height: scrolled ? "60px" : "72px",
           boxShadow: scrolled
             ? "0 4px 32px rgba(0,0,0,0.25)"
@@ -71,8 +89,9 @@ export default function Navbar({ isDms, role, name } : {isDms: boolean, role?: s
 
         {/* Desktop links */}
         { isDms ? (
-          <div className="hidden md:flex items-center gap-9">
-            <p className='font-label text-[18px] font-semibold tracking-[0.12em] uppercase text-soma-black'>{role ?? 'Sistema Interno'}{name ? ` : ${name}` : ''}</p>
+          <div className="flex items-center gap-9">
+            <p className='hidden md:block font-label text-[18px] font-semibold tracking-[0.12em] uppercase text-soma-black'>{role ?? 'Sistema Interno'}{name ? ` : ${name}` : ''}</p>
+            {dmsAction}
           </div>
         ) : (
           <ul className="hidden md:flex items-center gap-9 list-none">
@@ -108,14 +127,16 @@ export default function Navbar({ isDms, role, name } : {isDms: boolean, role?: s
         )
         }
 
-        {/* Mobile hamburger */}
-        <button
-          className="md:hidden text-soma-brown p-1"
-          onClick={() => setMenuOpen((o) => !o)}
-          aria-label="Menú"
-        >
-          {menuOpen ? <CloseIcon /> : <MenuIcon />}
-        </button>
+        {/* Mobile hamburger: sus enlaces son del sitio público, no del DMS */}
+        {!isDms && (
+          <button
+            className="md:hidden text-soma-brown p-1"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label="Menú"
+          >
+            {menuOpen ? <CloseIcon /> : <MenuIcon />}
+          </button>
+        )}
       </nav>
 
       {/* Mobile drawer 

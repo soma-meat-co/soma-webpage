@@ -73,6 +73,7 @@ function errorResponse(status: number, code: string, message: string): Response 
  * @throws 403 `forbidden` si quien llama no es admin
  * @throws 409 `email_exists` si ya existe un usuario con ese email
  * @throws 500 `invite_failed` / `admin_check_failed` ante errores de Supabase
+ * @throws 500 `misconfigured` si falta el secreto `INVITE_REDIRECT_URL`
  * @example
  * const { data, error } = await supabase.functions.invoke("invite-user-as-admin", {
  *   body: { email: "ana@somameat.com", nombre: "Ana", apellido_paterno: "López" },
@@ -103,7 +104,14 @@ export default {
       return errorResponse(422, "email_not_institutional", "El correo tiene que ser institucional (@somameat.com).");
     }
 
-    // Si INVITE_REDIRECT_URL no está definida, Supabase usa el Site URL del proyecto.
+    // La plantilla del correo arma el link con {{ .RedirectTo }}; sin esta variable el link
+    // apuntaría al Site URL (sin /DMS/set-password) y el usuario no podría activar su cuenta.
+    const redirectTo = Deno.env.get("INVITE_REDIRECT_URL");
+    if (!redirectTo) {
+      console.error("Falta el secreto INVITE_REDIRECT_URL.");
+      return errorResponse(500, "misconfigured", "La función no está configurada.");
+    }
+
     const { data: invited, error: inviteError } = await ctx.supabaseAdmin.auth.admin.inviteUserByEmail(
       input.email,
       {
@@ -112,7 +120,7 @@ export default {
           apellido_paterno: input.apellido_paterno,
           apellido_materno: input.apellido_materno,
         },
-        redirectTo: Deno.env.get("INVITE_REDIRECT_URL"),
+        redirectTo,
       },
     );
 

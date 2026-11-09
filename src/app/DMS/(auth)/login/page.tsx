@@ -1,5 +1,6 @@
 "use client"
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
 import SomaLogo from "@/assets/icons/soma-logo.svg";
 
@@ -11,6 +12,9 @@ import { AuthError, AuthErrorCode } from "@/lib/errors/auth";
  * 
  */
 export default function LoginPage() {
+  // Routeo de páginas
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -38,6 +42,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await authProvider.login(email, password);
+      router.replace("/DMS");
     } catch (err) {
       if (err instanceof AuthError) {
         switch (err.code) {
@@ -55,6 +60,7 @@ export default function LoginPage() {
       }
     } finally {
       setLoading(false);
+      
     }
   };
 
@@ -65,8 +71,7 @@ export default function LoginPage() {
     >
       {/* Side banner de SOMA MEAT CO solo visible en md para arriba*/}
       <div
-        className="hidden md:flex lg:w-[30%] flex-col justify-between p-12 relative
-        "
+        className="hidden md:flex lg:w-[30%] flex-col justify-between p-12 relative bg-soma-black"
       >
         <SomaLogo
           role="img"
@@ -132,7 +137,7 @@ export default function LoginPage() {
             Ingresa con tu cuenta de equipo.
           </p>
 
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label
                 htmlFor="email"
@@ -147,10 +152,11 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nombre@somameat.co"
-                className="w-full h-11 px-3 rounded-md border border-[#DAD6CE] bg-white text-sm text-black placeholder:text-soma-gray outline-none transition-colors focus:border-soma-red"
+                className="w-full h-11 px-3 rounded-md border border-[#DAD6CE] bg-white shadow-soma text-sm text-black placeholder:text-soma-gray outline-none transition-colors focus:border-soma-red"
               />
             </div>
 
+            {/* INDEX: CONTRASEÑA  */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label
@@ -162,7 +168,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   className="text-xs font-medium hover:underline text-soma-red"
-                  onClick={() => {/* abrir flujo de recuperación */}}
+                  onClick={() => router.push("/DMS/reset-password")}
                 >
                   ¿Olvidaste tu contraseña?
                 </button>
@@ -175,7 +181,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full h-11 px-3 pr-10 rounded-md border border-[#DAD6CE] bg-white text-sm text-black [word-spacing:0.2em] placeholder:[word-spacing:normal] placeholder:text-soma-gray outline-none transition-colors focus:border-soma-red"
+                  className="w-full h-11 px-3 pr-10 rounded-md border border-[#DAD6CE] bg-white shadow-soma text-sm text-black [word-spacing:0.2em] placeholder:[word-spacing:normal] placeholder:text-soma-gray outline-none transition-colors focus:border-soma-red"
                 />
                 <button
                   type="button"
@@ -197,7 +203,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 rounded-md font-semibold text-sm text-white flex items-center justify-center gap-2 transition-opacity disabled:opacity-70 bg-soma-red"
+              className="w-full h-11 rounded-md shadow-soma font-semibold text-sm text-white flex items-center justify-center gap-2 transition-opacity disabled:opacity-70 bg-soma-red"
             >
               {loading && <Loader2 size={16} className="animate-spin" />}
               {loading ? "Verificando..." : "Entrar"}

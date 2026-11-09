@@ -56,7 +56,9 @@
   --color-soma-gray: #A7A9AC;
   --color-soma-gray-lt: #D4D5D7;
   --color-soma-black: #0D0B09;
-  --color-soma-off-wh: #F5F1EC;
+  --color-soma-off-wh: #FFFFFF;
+  /* Sombra por defecto de los elementos: se usa con la clase shadow-soma */
+  --shadow-soma: 0 1px 2px rgb(13 11 9 / 0.08), 0 4px 12px rgb(13 11 9 / 0.1);
 }
 
 :root {
