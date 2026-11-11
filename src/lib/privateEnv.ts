@@ -1,4 +1,6 @@
+import 'server-only'
 import { z } from 'zod';
+
 
 export const envSchema = z.object ({
     SUPABASE_SECRET_KEY: z.string().min(1),

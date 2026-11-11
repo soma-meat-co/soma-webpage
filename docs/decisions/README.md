@@ -12,3 +12,4 @@ Registro de decisiones arquitectónicas del proyecto. Cada ADR documenta una dec
 | [ADR-004](./ADR-004-roles-and-access-control.md) | Modelo de roles y control de acceso por tags | Parcialmente reemplazado por ADR-006 |
 | [ADR-005](./ADR-005-abstraction-layer.md) | Capa de abstracción para BaaS y storage | Aceptado |
 | [ADR-006](./ADR-006-simplified-roles-in-profiles.md) | Modelo de roles simplificado en `profiles` | Aceptado |
+| [ADR-007](./ADR-007-privileged-operations-edge-functions.md) | Operaciones con service role en Edge Functions | Aceptado |

@@ -3,12 +3,14 @@
  * las capas de servicio lanzan sus subclases (AuthError, StorageError).
  *
  * @param code - identificador estable del error, definido en el enum de cada capa
- * @param message - mensaje legible para logs o respuesta al cliente
+ * @param detail - detalle técnico para logs; nunca se muestra al usuario
+ * @param genericMessage - mensaje para el usuario final; se expone en `genericMessage`
  * @param statusCode - código HTTP a devolver en la respuesta
  */
 export abstract class AppError extends Error {
     public readonly detail: string;
-    constructor(    
+    public readonly genericMessage: string;
+    constructor(
         public readonly code: string,
         detail: string,
         genericMessage: string,
@@ -18,6 +20,7 @@ export abstract class AppError extends Error {
         super(isDev ? `${new.target.name}: ${detail}` : `${new.target.name}: ${genericMessage}`);
         this.name = new.target.name;
         this.detail = detail;
+        this.genericMessage = genericMessage;
         Object.setPrototypeOf(this, new.target.prototype);
     }
 

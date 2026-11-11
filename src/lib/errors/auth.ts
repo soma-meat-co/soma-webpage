@@ -7,8 +7,8 @@ export enum AuthErrorCode{
     RoleNotFound = 'AUTH_ROLE_NOT_FOUND',
     LinkInvalid = 'AUTH_LINK_INVALID',
     WeakPassword = 'AUTH_WEAK_PASSWORD',
-    NewPasswordError = 'NEW_PASSWORD_ERROR',
-    OtpVerificationError = 'OTP_VERIFICATION_ERROR',
+    NewPasswordError = 'AUTH_NEW_PASSWORD_ERROR',
+    OtpVerificationError = 'AUTH_OTP_VERIFICATION_ERROR',
     PasswordResetRequestError = 'AUTH_PASSWORD_RESET_REQUEST_ERROR',
 }
 

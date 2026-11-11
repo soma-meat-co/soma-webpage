@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { inviteUserAction } from "./actions";
 
 const INPUT_CLASS =
   "w-full h-11 px-3 rounded-md border border-[#DAD6CE] bg-white shadow-soma text-sm text-black placeholder:text-soma-gray outline-none transition-colors focus:border-soma-red";
@@ -24,7 +25,31 @@ export default function InviteUserPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO(Javier): validar e invocar la Edge Function invite-user-as-admin.
+    setError("");
+    setLoading(true);
+
+    try {
+      // La validación real (campos, dominio, permisos) ocurre en la Edge Function.
+      const result = await inviteUserAction({
+        email,
+        nombre,
+        apellidoPaterno,
+        apellidoMaterno: apellidoMaterno || undefined,
+      });
+
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+
+      setEmail(result.email);
+      setDone(true);
+    } catch {
+      // La action no lanza; esto solo ocurre si la request al servidor no llegó.
+      setError("No se pudo conectar con el servidor. Revisa tu conexión.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleInviteAnother = () => {

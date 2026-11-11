@@ -111,6 +111,7 @@ async function setPasswordHelper(otp: OTPType, tokenHash: string, password: stri
     verifiedTokenHash = null;
 }
 
+// INDEX: SupabaseAuthService
 /**
  * Implementación de {@link AuthProvider} sobre Supabase. Si el proyecto
  * migra de proveedor, este es el único archivo que debe reescribirse —
