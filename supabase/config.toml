@@ -432,3 +432,10 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/request-password-reset/deno.json"
 entrypoint = "./functions/request-password-reset/index.ts"
+
+# Interna: la llama el cron `hard-delete-documents` con pg_net. withSupabase valida la secret key.
+[functions.hard-delete-documents]
+enabled = true
+verify_jwt = false
+import_map = "./functions/hard-delete-documents/deno.json"
+entrypoint = "./functions/hard-delete-documents/index.ts"

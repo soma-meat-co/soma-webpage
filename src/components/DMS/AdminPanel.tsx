@@ -16,7 +16,7 @@ export function AdminPanel() {
     return (
         <DmsSection title="Administración" aside={<DmsBadge>Próximamente</DmsBadge>}>
             <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-                <ComingSoonButton label="Subir documento" icon={Upload} primary />
+                <LinkButton href="/DMS/admin/dashboard" label="Subir documento" icon={Upload} primary />
                 <LinkButton href="/DMS/admin/user-management" label="Usuarios" icon={Users} />
                 <ComingSoonButton label="Tags" icon={Tags} />
             </div>

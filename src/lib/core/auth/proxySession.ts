@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 import type { Role } from '@/lib/core/auth/provider/auth.provider';
+import type { Database } from '@/lib/core/database.types';
 import { publicEnv } from '@/lib/publicEnv';
 
 /**
@@ -38,7 +39,7 @@ export async function getProxySession(request: NextRequest): Promise<ProxySessio
     const pendingCookies: { name: string; value: string; options: CookieOptions }[] = [];
     const pendingHeaders: Record<string, string> = {};
 
-    const supabase = createServerClient(
+    const supabase = createServerClient<Database>(
         publicEnv.NEXT_PUBLIC_SUPABASE_URL,
         publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
         {

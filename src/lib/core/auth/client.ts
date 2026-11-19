@@ -1,4 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr';
+import type { Database } from '@/lib/core/database.types';
 import { publicEnv } from '@/lib/publicEnv';
 
 /**
@@ -8,7 +9,7 @@ import { publicEnv } from '@/lib/publicEnv';
  * Todos los servicios de cliente deben importar esta instancia: es la que tiene
  * la sesión y envía el JWT del usuario en cada petición.
  */
-export const supabase = createBrowserClient(
+export const supabase = createBrowserClient<Database>(
     publicEnv.NEXT_PUBLIC_SUPABASE_URL,
     publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
 );
