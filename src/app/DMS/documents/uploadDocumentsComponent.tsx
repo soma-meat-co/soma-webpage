@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { FileUp } from "lucide-react";
 import { SupportedFileTypes, isSupportedFileType } from "@/lib/core/storage/provider/storage.provider";
-
+import type { Area } from "@/lib/core/areas/provider/areas.provider";
+import { UploadedDocumentCard, type UploadedDocument } from "./uploadedDocumentCard";
 
 // Server actions de subir documentos
 import { uploadDocument, confirmUploadedDocument } from "./documents.actions";
@@ -13,19 +14,23 @@ const ACCEPTED_TYPES = Object.values(SupportedFileTypes).join(",");
 type UploadStatus = "idle" | "uploading" | "success" | "error"; 
 
 /**
- * Subida de documentos en dos vistas. Sin archivo, muestra la zona de drag and
+ * Subida de documentos en tres vistas. Sin archivo, muestra la zona de drag and
  * drop (o clic para elegir). Con archivo, la zona desaparece y se muestran los
  * datos del documento. "Subir" crea la fila pendiente (`uploadDocument`), hace
  * el `PUT` a R2 con la URL firmada y confirma (`confirmUploadedDocument`).
+ * Al terminar, muestra la card del documento para asignarle áreas.
  *
- * @returns la zona de subida, o el formulario del documento elegido
+ * @param areas - áreas disponibles para asignar al documento subido
+ * @returns la zona de subida, el formulario del documento elegido, o la card
+ *   del documento subido
  * @example
- * <UploadDocumentsComponent />
+ * <UploadDocumentsComponent areas={areas} />
  */
-export function UploadDocumentsComponent() {
+export function UploadDocumentsComponent({ areas }: { areas: Area[] }) {
   const [error, setError] = useState("");
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
-  
+  const [uploaded, setUploaded] = useState<UploadedDocument | null>(null);
+
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState<string>();
@@ -77,6 +82,7 @@ export function UploadDocumentsComponent() {
         return;
       }
 
+      setUploaded({ id: data.uuid, name: name, fileType: file!.type });
       setFile(null);
       setName("");
       setDescription(undefined);
@@ -97,12 +103,22 @@ export function UploadDocumentsComponent() {
     if (dropped) setFile(dropped);
   };
 
+  if (uploaded) {
+    return (
+      <UploadedDocumentCard
+        document={uploaded}
+        areas={areas}
+        onDone={() => {
+          setUploaded(null);
+          setUploadStatus("idle");
+        }}
+      />
+    );
+  }
+
   if (!file) {
     return (
       <div className="space-y-4">
-      {uploadStatus === "success" && (
-        <p className="text-xs rounded-md px-3 py-2 text-soma-brown bg-soma-brown/10">Documento subido.</p>
-      )}
       <label
         onDragOver={(e) => {
           e.preventDefault();

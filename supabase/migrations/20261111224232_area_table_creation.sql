@@ -18,7 +18,7 @@ ALTER TABLE areas ENABLE ROW LEVEL SECURITY;
 -- Cualquier usuario autenticado puede leer áreas
 CREATE POLICY "areas_select" ON areas
 FOR SELECT TO authenticated
-USING (true);
+USING ((SELECT public.is_admin()));
 
 -- Solo usarios dentreo de is_admin pueden crear/editar/borrar
 CREATE POLICY "areas_insert" ON areas

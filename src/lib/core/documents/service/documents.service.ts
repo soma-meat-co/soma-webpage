@@ -17,6 +17,9 @@ const RLS_VIOLATION = '42501';
 /** Código de Postgres cuando un insert choca con una llave única (aquí, el `id`). */
 const UNIQUE_VIOLATION = '23505';
 
+/** Código de Postgres cuando una llave foránea apunta a una fila que no existe. */
+const FOREIGN_KEY_VIOLATION = '23503';
+
 /** Intentos de insert antes de rendirse si el `id` generado ya existe. */
 const MAX_INSERT_ATTEMPTS = 3;
 
@@ -163,6 +166,52 @@ class SupabaseDocumentsService implements DocumentsProvider {
                 404,
             );
         }
+    }
+
+    /**
+     * Inserta la fila en `document_areas` con el cliente de sesión, así que
+     * RLS (`is_admin()`) decide si se permite. Si la pareja ya existe
+     * (`23505`), el documento ya tenía el área y se trata como éxito.
+     *
+     * @param documentId - id del documento
+     * @param areaId - id del área
+     * @throws {AccessError} `AuthorizationFailure` si RLS rechaza el insert
+     * @throws {DocumentError} `AssignAreaFailed` si el documento o el área no
+     *   existen (`23503`) o si el insert falló por otra razón
+     * @example
+     * await documentsProvider.addDocumentToArea(documentId, areaId)
+     */
+    async addDocumentToArea(documentId: string, areaId: string): Promise<void> {
+        const supabase = await createSupabaseServerClient();
+
+        const { error } = await supabase
+            .from('document_areas')
+            .insert({ document_id: documentId, area_id: areaId });
+
+        if (!error || error.code === UNIQUE_VIOLATION) return;
+
+        if (error.code === RLS_VIOLATION) {
+            throw new AccessError(
+                AccessErrorCode.AuthorizationFailure,
+                `addDocumentToArea: RLS rechazó asignar el área ${areaId} al documento ${documentId}: ${error.message}`,
+                'No cuentas con los permisos necesarios para esta acción.',
+                403,
+            );
+        }
+        if (error.code === FOREIGN_KEY_VIOLATION) {
+            throw new DocumentError(
+                DocumentErrorCode.AssignAreaFailed,
+                `addDocumentToArea: no existe el documento ${documentId} o el área ${areaId}: ${error.message}`,
+                'No se encontró el documento o el área.',
+                404,
+            );
+        }
+        throw new DocumentError(
+            DocumentErrorCode.AssignAreaFailed,
+            `No se pudo asignar el área ${areaId} al documento ${documentId}: ${error.message}`,
+            'No se pudo asignar el área. Intenta más tarde.',
+            500,
+        );
     }
 }
 

@@ -1,9 +1,6 @@
 import type { NextConfig } from "next";
 import path from "path";
 
-const isGithubPages = process.env.DEPLOY_TARGET === "github-pages";
-const basePath = isGithubPages ? "/soma-webpage" : "";
-
 const nextConfig: NextConfig = {
   reactCompiler: true,
   turbopack: {
@@ -39,7 +36,6 @@ const nextConfig: NextConfig = {
     return config;
   },
   images: {
-    unoptimized: isGithubPages,
     remotePatterns: [
       {
         protocol: "https",
@@ -47,11 +43,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  basePath,
-  env: {
-    NEXT_PUBLIC_BASE_PATH: basePath,
-  },
-  ...(isGithubPages ? { output: "export" as const } : {}),
   reactStrictMode: true,
 };
 

@@ -73,4 +73,18 @@ export interface DocumentsProvider {
      * await documentsProvider.confirmUpload(id)
      */
     confirmUpload(documentId: string): Promise<void>;
+
+    /**
+     * Asigna un área a un documento (fila en `document_areas`). Si el
+     * documento ya tenía esa área, no hace nada.
+     *
+     * @param documentId - id del documento
+     * @param areaId - id del área
+     * @throws {AccessError} `AuthorizationFailure` si quien llama no es admin
+     * @throws {DocumentError} `AssignAreaFailed` si el documento o el área no
+     *   existen, o si el insert falló por otra razón
+     * @example
+     * await documentsProvider.addDocumentToArea(documentId, areaId)
+     */
+    addDocumentToArea(documentId: string, areaId: string): Promise<void>;
 }

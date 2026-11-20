@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Reveal } from "@/components/Reveal";
 import SectionDivider from "@/components/ui/SectionDivider";
-import { withBasePath } from "@/lib/basePath";
 
 export const metadata: Metadata = {
   title: "Servicios TIF — SOMA MEAT CO | Rastro · Corte · Maquila · Empaque",
@@ -94,7 +93,7 @@ export default function ServiciosPage() {
       {/* Page Hero */}
       <div className="relative flex items-end overflow-hidden h-[25vh] md:h-[40vh] min-h-[260px] px-4 pb-5 pt-20 sm:px-10 sm:pb-8 sm:pt-24 md:px-20 md:pb-10 md:pt-28">
         <Image
-          src={withBasePath("/servicios-hero.webp")}
+          src="/servicios-hero.webp"
           alt="SOMA MEAT CO"
           fill
           className="object-cover object-center"
@@ -200,7 +199,7 @@ export default function ServiciosPage() {
             <Reveal delay={0.2} direction="left" className={`order-1 ${idx % 2 === 1 ? "md:order-1" : "md:order-2"}`}>
               <div className="rounded-sm flex flex-col justify-end p-6 sm:p-8 md:p-10 relative overflow-hidden h-[240px] sm:h-[340px] md:h-[460px]" style={{ background: "#3C2415" }}>
                 <Image
-                  src={withBasePath(svc.imagen)}
+                  src={svc.imagen}
                   alt={svc.title}
                   fill
                   className="object-cover object-top"

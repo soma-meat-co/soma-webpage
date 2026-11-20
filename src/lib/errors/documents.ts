@@ -4,6 +4,7 @@ export enum DocumentErrorCode {
     CreateFailed = 'DOCUMENT_CREATE_FAILED',
     ConfirmFailed = 'DOCUMENT_CONFIRM_FAILED',
     UploadNotPending = 'DOCUMENT_UPLOAD_NOT_PENDING',
+    AssignAreaFailed = 'DOCUMENT_ASSIGN_AREA_FAILED',
 }
 
 export class DocumentError extends AppError {

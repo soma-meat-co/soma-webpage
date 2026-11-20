@@ -47,3 +47,30 @@ export async function confirmUploadedDocument(documentId: string): Promise<Confi
         return { ok: false, code: 'UNEXPECTED_ERROR', message: 'Ocurrió un error inesperado. Intetna mas tarde'}
     }
 }
+
+export type AddDocumentToAreaResult =
+    | {ok: true}
+    | {ok: false; code: string; message: string};
+
+/**
+ * Asigna un área a un documento. Si ya la tenía, también devuelve `ok`.
+ *
+ * @param documentId - id del documento
+ * @param areaId - id del área
+ * @returns `{ok: true}` o el error para mostrar en la UI
+ * @example
+ * const result = await addDocumentToArea(documentId, areaId)
+ */
+export async function addDocumentToArea(documentId: string, areaId: string): Promise<AddDocumentToAreaResult> {
+    try {
+        await documentsProvider.addDocumentToArea(documentId, areaId);
+        return {ok: true};
+    } catch (err) {
+        if (err instanceof AppError) {
+            console.error(`[addDocumentToArea] ${err.code} (${err.statusCode}): ${err.detail}`);
+            return {ok: false, code: err.code, message: err.genericMessage};
+        }
+        console.error(`[addDocumentToArea] error inesperado: `, err);
+        return {ok: false, code: 'UNEXPECTED_ERROR', message: 'Ocurrió un error inesperado. Intenta más tarde.'};
+    }
+}
