@@ -87,4 +87,21 @@ export interface DocumentsProvider {
      * await documentsProvider.addDocumentToArea(documentId, areaId)
      */
     addDocumentToArea(documentId: string, areaId: string): Promise<void>;
+
+    /**
+     * Asigna un documento a una carpeta, lo mueve de una carpeta a otra o lo
+     * saca de toda carpeta (`folderId = null`). Las tres son el mismo cambio
+     * de `documents.folder_id`. Un documento con soft delete no se puede
+     * mover: primero hay que recuperarlo (ADR-011).
+     *
+     * @param documentId - id del documento
+     * @param folderId - id de la carpeta destino, o `null` para dejarlo sin carpeta
+     * @throws {AccessError} `AuthorizationFailure` si quien llama no es admin
+     * @throws {DocumentError} `MoveToFolderFailed` si la carpeta no existe, si
+     *   el documento no existe, está eliminado o quien llama no es admin, o si
+     *   la actualización falló por otra razón
+     * @example
+     * await documentsProvider.moveDocumentToFolder(documentId, folderId)
+     */
+    moveDocumentToFolder(documentId: string, folderId: string | null): Promise<void>;
 }

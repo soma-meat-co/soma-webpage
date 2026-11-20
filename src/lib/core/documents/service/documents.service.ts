@@ -213,6 +213,67 @@ class SupabaseDocumentsService implements DocumentsProvider {
             500,
         );
     }
+
+    /**
+     * Cambia `folder_id` con el cliente de sesión, así que RLS (`is_admin()`)
+     * decide si se permite. Solo actualiza documentos sin soft delete
+     * (`deleted_at IS NULL`): un documento eliminado debe quedarse fuera de
+     * toda carpeta (ADR-011). Como RLS no da error en un UPDATE, se pide la
+     * fila de vuelta y 0 filas cuenta como fallo.
+     *
+     * @param documentId - id del documento
+     * @param folderId - id de la carpeta destino, o `null` para dejarlo sin carpeta
+     * @throws {AccessError} `AuthorizationFailure` si Postgres responde `42501`
+     * @throws {DocumentError} `MoveToFolderFailed` si la carpeta no existe
+     *   (`23503`), si no se actualizó ninguna fila (no existe, está eliminado
+     *   o RLS la filtró) o por otro error
+     * @example
+     * await documentsProvider.moveDocumentToFolder(documentId, folderId)
+     */
+    async moveDocumentToFolder(documentId: string, folderId: string | null): Promise<void> {
+        const supabase = await createSupabaseServerClient();
+
+        const { data, error } = await supabase
+            .from('documents')
+            .update({ folder_id: folderId })
+            .eq('id', documentId)
+            .is('deleted_at', null)
+            .select('id');
+
+        if (error) {
+            if (error.code === RLS_VIOLATION) {
+                throw new AccessError(
+                    AccessErrorCode.AuthorizationFailure,
+                    `moveDocumentToFolder: permisos insuficientes para mover ${documentId}: ${error.message}`,
+                    'No cuentas con los permisos necesarios para esta acción.',
+                    403,
+                );
+            }
+            if (error.code === FOREIGN_KEY_VIOLATION) {
+                throw new DocumentError(
+                    DocumentErrorCode.MoveToFolderFailed,
+                    `moveDocumentToFolder: no existe la carpeta ${folderId}: ${error.message}`,
+                    'No se encontró la carpeta destino.',
+                    404,
+                );
+            }
+            throw new DocumentError(
+                DocumentErrorCode.MoveToFolderFailed,
+                `No se pudo mover el documento ${documentId} a la carpeta ${folderId}: ${error.message}`,
+                'No se pudo mover el documento. Intenta más tarde.',
+                500,
+            );
+        }
+
+        if (data.length === 0) {
+            throw new DocumentError(
+                DocumentErrorCode.MoveToFolderFailed,
+                `UPDATE de documento ${documentId} afectó 0 filas: no existe, está eliminado o RLS la filtró (¿usuario sin admin?).`,
+                'No se encontró el documento o no tienes permisos para moverlo.',
+                404,
+            );
+        }
+    }
 }
 
 export const documentsProvider: DocumentsProvider = new SupabaseDocumentsService();

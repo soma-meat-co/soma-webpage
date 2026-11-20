@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOMA DMS — Documentos y áreas</title>
+<style>
+  :root {
+    --red: #AC1F25;
+    --brown: #3C2415;
+    --off: #F5F1EC;
+    --gray: #6b6d70;
+    --line: #DAD6CE;
+    --white: #ffffff;
+    --head: #efe9e1;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--off);
+    color: var(--brown);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 920px; margin: 0 auto; padding: 40px 20px 80px; }
+  header { border-bottom: 3px solid var(--red); padding-bottom: 16px; margin-bottom: 28px; }
+  header p { margin: 4px 0; color: var(--gray); }
+  h1 { font-size: 28px; margin: 0 0 8px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; }
+  h3 { font-size: 17px; margin: 28px 0 8px; }
+  h4 { font-size: 15px; margin: 18px 0 6px; }
+  p, li { max-width: 78ch; }
+  a { color: var(--red); }
+  code {
+    font: 13px/1.4 ui-monospace, Consolas, monospace;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 5px;
+    word-break: break-word;
+  }
+  pre {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font: 13px/1.5 ui-monospace, Consolas, monospace;
+  }
+  pre code { border: 0; padding: 0; background: none; }
+  nav {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px 20px;
+  }
+  nav ol { margin: 0; padding-left: 20px; }
+  nav ol ol { padding-left: 18px; }
+  .card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 14px 0;
+  }
+  .warn { border-left: 4px solid var(--red); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; background: var(--white); border: 1px solid var(--line); margin: 12px 0; font-size: 14.5px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--head); }
+  .fn {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    margin: 12px 0;
+    overflow: hidden;
+  }
+  .fn > .sig {
+    background: var(--head);
+    padding: 8px 14px;
+    font: 13.5px/1.5 ui-monospace, Consolas, monospace;
+    word-break: break-word;
+  }
+  .fn > .body { padding: 6px 14px 10px; }
+  .fn ul { margin: 4px 0; padding-left: 20px; }
+  .tag { display: inline-block; font: 600 11px/1 system-ui, sans-serif; text-transform: uppercase; letter-spacing: .04em; padding: 3px 7px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+  .t-client { background: #e3ecf7; color: #234a7a; }
+  .t-action { background: #f5dcdd; color: var(--red); }
+  .t-service { background: #e4efe3; color: #2f5a2b; }
+  .t-db { background: #efe5d6; color: #6a4a1c; }
+  .flow { list-style: none; padding: 0; counter-reset: s; }
+  .flow > li {
+    counter-increment: s;
+    position: relative;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 14px 10px 52px;
+    margin: 8px 0;
+  }
+  .flow > li::before {
+    content: counter(s);
+    position: absolute; left: 14px; top: 10px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--red); color: var(--white);
+    font-weight: 700; text-align: center; line-height: 26px; font-size: 14px;
+  }
+  .flow small { color: var(--gray); }
+  dl dt { font-weight: 700; margin-top: 12px; }
+  dl dd { margin: 2px 0 0 0; }
+  footer { margin-top: 56px; color: var(--gray); font-size: 14px; border-top: 1px solid var(--line); padding-top: 16px; }
+  @media (max-width: 600px) { h1 { font-size: 24px; } }
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <h1>Documentos y áreas — cómo funciona</h1>
+  <p>Referencia técnica del estado actual del código: flujos, funciones, archivos, base de datos y errores.</p>
+  <p>Alcance: subida de documentos a R2, asignación de áreas a documentos y administración de áreas en el DMS.</p>
+</header>
+
+<nav>
+  <strong>Contenido</strong>
+  <ol>
+    <li><a href="#capas">Arquitectura en capas</a></li>
+    <li><a href="#flujos">Flujos</a>
+      <ol>
+        <li><a href="#flujo-subida">Subir un documento</a></li>
+        <li><a href="#flujo-asignar">Asignar un área a un documento</a></li>
+        <li><a href="#flujo-areas">Cargar, crear, editar y borrar áreas</a></li>
+      </ol>
+    </li>
+    <li><a href="#funciones">Referencia de funciones por archivo</a></li>
+    <li><a href="#db">Base de datos</a></li>
+    <li><a href="#errores">Manejo de errores</a></li>
+    <li><a href="#config">Configuración y variables de entorno</a></li>
+    <li><a href="#extender">Cómo extender</a></li>
+    <li><a href="#limites">Comportamientos no obvios y límites actuales</a></li>
+    <li><a href="#glosario">Glosario</a></li>
+  </ol>
+</nav>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="capas">1. Arquitectura en capas</h2>
+
+<p>Toda operación atraviesa las mismas cuatro capas, siempre en este orden. Ninguna capa salta a otra que no sea la siguiente.</p>
+
+<pre><code>Componente (navegador)          src/app/DMS/**/xxxComponent.tsx, src/components/DMS/*
+   │  llama
+   ▼
+Server Action ('use server')    src/app/DMS/**/xxx.actions.ts
+   │  llama
+   ▼
+Provider (interfaz) ← Service   src/lib/core/&lt;módulo&gt;/provider/*.provider.ts   (contrato)
+                                src/lib/core/&lt;módulo&gt;/service/*.service.ts     (implementación)
+   │  usa
+   ▼
+Supabase (Postgres + RLS)  /  Cloudflare R2</code></pre>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Capa</th><th>Responsabilidad</th><th>Lo que <em>no</em> hace</th></tr></thead>
+  <tbody>
+    <tr><td>Componente <span class="tag t-client">cliente</span></td><td>Estado de la UI, llamar actions, hacer el <code>PUT</code> del archivo a R2, mostrar <code>message</code> de error.</td><td>No importa SDKs de Supabase ni de R2. No decide permisos.</td></tr>
+    <tr><td>Server Action <span class="tag t-action">action</span></td><td>Punto de entrada desde el navegador. Llama al service, atrapa cualquier error y lo convierte en <code>{ ok: false, code, message }</code>. Escribe el detalle en los logs del servidor.</td><td>No lanza errores al cliente. No contiene lógica de negocio.</td></tr>
+    <tr><td>Provider / Service <span class="tag t-service">service</span></td><td>Toda la interacción con Supabase o R2. Traduce errores de Postgres a errores de la app (<code>AppError</code>).</td><td>No conoce la UI. No devuelve objetos <code>{ ok }</code>.</td></tr>
+    <tr><td>Base de datos <span class="tag t-db">db</span></td><td>Guarda datos y <strong>decide permisos</strong> con RLS.</td><td>—</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Reglas que se cumplen en todo el módulo</h3>
+<ul>
+  <li><strong>Los permisos los decide RLS.</strong> Los services usan el cliente con la sesión del usuario (<code>createSupabaseServerClient</code>), así que Postgres evalúa las políticas como ese usuario. La UI solo oculta lo que el usuario no puede usar.</li>
+  <li><strong>Las credenciales nunca llegan al navegador.</strong> Las claves de R2 viven en <code>privateEnv</code> y solo las usa <code>storage.service.ts</code>, marcado con <code>import 'server-only'</code>.</li>
+  <li><strong>Cada service se exporta como una instancia del provider:</strong> <code>documentsProvider</code>, <code>areasProvider</code>, <code>storageProvider</code>. El resto del código depende de la interfaz, no de la clase.</li>
+  <li><strong>Las actions nunca lanzan.</strong> Next reemplaza el mensaje de los errores lanzados en producción, así que el único modo de mostrar un mensaje útil es devolverlo.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="flujos">2. Flujos</h2>
+
+<h3 id="flujo-subida">2.1 Subir un documento</h3>
+
+<p>Punto de entrada: <code>handleUpload()</code> en <code>src/app/DMS/documents/uploadDocumentsComponent.tsx</code>, al presionar "Subir".</p>
+
+<p>La fila en la base de datos se crea <em>antes</em> que el archivo en R2. Si la subida falla a la mitad, queda una fila pendiente (localizable desde la base de datos) en lugar de un archivo sin registro.</p>
+
+<ol class="flow">
+  <li>
+    <span class="tag t-client">cliente</span> <strong>Validación local.</strong>
+    Si no hay archivo, o <code>isSupportedFileType(file.type)</code> es falso, muestra error y se detiene. Pasa <code>uploadStatus</code> a <code>"uploading"</code>.
+  </li>
+  <li>
+    <span class="tag t-action">action</span> <code>uploadDocument({ name, description, fileType, fileSize })</code><br>
+    <small>src/app/DMS/documents/documents.actions.ts</small>
+    <ol>
+      <li><span class="tag t-service">service</span> <code>documentsProvider.createPendingDocument(input)</code>:
+        <ul>
+          <li><code>supabase.auth.getUser()</code> → sin sesión: <code>AuthError</code> 401.</li>
+          <li><code>supabase.rpc('has_full_document_access')</code> → falso: <code>AccessError</code> 403.</li>
+          <li>Genera <code>id = crypto.randomUUID()</code> y <code>key = storageProvider.createDocumentKey(id, fileType)</code> → <code>documents/&lt;id&gt;.pdf</code>.</li>
+          <li><code>INSERT</code> en <code>documents</code> con <code>uploaded_at = NULL</code> (pendiente) y <code>uploaded_by = user.id</code>. Si el <code>id</code> choca (<code>23505</code>), genera otro; hasta 3 intentos.</li>
+          <li>Devuelve <code>{ id, key }</code>.</li>
+        </ul>
+      </li>
+      <li><span class="tag t-service">service</span> <code>storageProvider.createUploadUrl({ key, contentType, size })</code>: firma un <code>PUT</code> a R2 válido 5 minutos, con <code>content-type</code> y <code>content-length</code> incluidos en la firma.</li>
+      <li>Devuelve <code>{ ok: true, uuid: id, signedUrl: { url, expiresAt } }</code>.</li>
+    </ol>
+  </li>
+  <li>
+    <span class="tag t-client">cliente</span> <strong>PUT directo a R2.</strong>
+    <code>fetch(signedUrl.url, { method: "PUT", body: file, headers: { "Content-Type": file.type } })</code>.
+    El cuerpo es el <code>File</code> tal cual (sin <code>FormData</code>) para que el navegador ponga el <code>Content-Length</code> exacto. Si <code>!response.ok</code>, error "No se pudo subir el archivo".
+  </li>
+  <li>
+    <span class="tag t-action">action</span> <code>confirmUploadedDocument(uuid)</code><br>
+    <small>src/app/DMS/documents/documents.actions.ts</small><br>
+    <span class="tag t-service">service</span> <code>documentsProvider.confirmUpload(id)</code>:
+    <code>UPDATE documents SET uploaded_at = now() WHERE id = $1 AND uploaded_at IS NULL</code>, pidiendo la fila de vuelta. 0 filas → <code>DocumentError.UploadNotPending</code> 404. Confirmar dos veces no cambia nada.
+  </li>
+  <li>
+    <span class="tag t-client">cliente</span> <strong>Muestra la card.</strong>
+    Guarda <code>{ id, name, fileType }</code> en el estado <code>uploaded</code>, lo que reemplaza el formulario por <code>&lt;UploadedDocumentCard&gt;</code>.
+  </li>
+</ol>
+
+<p>Estados de la UI (<code>UploadStatus</code>): <code>"idle"</code> → <code>"uploading"</code> → <code>"success"</code> | <code>"error"</code>. El botón se deshabilita en <code>"uploading"</code>; el mensaje de error solo se muestra en <code>"error"</code>.</p>
+
+<h3 id="flujo-asignar">2.2 Asignar un área a un documento</h3>
+
+<p>Punto de entrada: el <code>&lt;select&gt;</code> de <code>src/app/DMS/documents/uploadedDocumentCard.tsx</code>. Elegir una opción dispara <code>handleAssign(areaId)</code>.</p>
+
+<ol class="flow">
+  <li><span class="tag t-client">cliente</span> <code>handleAssign(areaId)</code> pasa a <code>"assigning"</code> (deshabilita el select).</li>
+  <li>
+    <span class="tag t-action">action</span> <code>addDocumentToArea(documentId, areaId)</code> <small>documents.actions.ts</small><br>
+    <span class="tag t-service">service</span> <code>documentsProvider.addDocumentToArea(documentId, areaId)</code>:
+    <code>INSERT</code> en <code>document_areas</code>.
+    <ul>
+      <li><code>23505</code> (la pareja ya existía) → se trata como éxito.</li>
+      <li><code>42501</code> → <code>AccessError</code> 403.</li>
+      <li><code>23503</code> (documento o área inexistente) → <code>DocumentError.AssignAreaFailed</code> 404.</li>
+    </ul>
+  </li>
+  <li><span class="tag t-client">cliente</span> Agrega el <code>areaId</code> a <code>assignedIds</code>. El área aparece como pellet y sale del dropdown.</li>
+</ol>
+
+<p>La card calcula los pellets como <code>areas.filter(a =&gt; assignedIds.includes(a.id))</code>: si un área se renombra, el pellet muestra el nombre nuevo; si se borra, desaparece.</p>
+
+<p>Esta función vive en el módulo <em>documents</em> porque la relación documento-área define quién puede ver el documento; el módulo <em>areas</em> se mantiene como catálogo.</p>
+
+<h3 id="flujo-areas">2.3 Cargar, crear, editar y borrar áreas</h3>
+
+<p>Todo lo coordina <code>AdminPanel</code> (<code>src/components/DMS/AdminPanel.tsx</code>), que se renderiza en <code>src/app/DMS/page.tsx</code> solo si <code>isAdminRole(user.role)</code>.</p>
+
+<h4>Carga y sincronización</h4>
+<ul>
+  <li><code>AdminPanel</code> guarda <code>areas: Area[]</code> en su estado y la carga al montarse con <code>loadAreas()</code> → action <code>fetchAllAreas()</code>.</li>
+  <li>Le pasa <code>areas</code> a <code>UploadDocumentsComponent</code> (dropdown de la card) y a <code>AreaListComponent</code> (lista).</li>
+  <li>Le pasa <code>loadAreas</code> como callback: <code>CreateAreaComponent onCreated</code> y <code>AreaListComponent onChanged</code>. Tras cada creación, edición o borrado exitoso se vuelve a pedir la lista completa, y todos los consumidores se actualizan.</li>
+</ul>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Operación</th><th>Componente → handler</th><th>Action</th><th>Service</th><th>SQL efectivo</th></tr></thead>
+  <tbody>
+    <tr><td>Listar</td><td><code>AdminPanel → loadAreas</code></td><td><code>fetchAllAreas()</code></td><td><code>areasProvider.fetchAllAreas()</code></td><td><code>SELECT id, name FROM areas ORDER BY name</code></td></tr>
+    <tr><td>Crear</td><td><code>CreateAreaComponent → handleCreate</code></td><td><code>createArea(name)</code></td><td><code>createNewArea(name)</code></td><td><code>INSERT INTO areas (name)</code>; <code>created_by</code> lo pone el <code>DEFAULT auth.uid()</code></td></tr>
+    <tr><td>Renombrar</td><td><code>AreaItem → run(editArea)</code></td><td><code>editArea(id, newName)</code></td><td><code>editArea(id, newName)</code></td><td><code>UPDATE areas SET name WHERE id RETURNING id</code></td></tr>
+    <tr><td>Borrar</td><td><code>AreaItem → run(deleteArea)</code></td><td><code>deleteArea(id)</code></td><td><code>deleteArea(id)</code></td><td><code>DELETE FROM areas WHERE id RETURNING id</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p><code>AreaItem</code> (dentro de <code>areaListComponent.tsx</code>) tiene tres modos: <code>"view"</code>, <code>"editing"</code> (input + ✓/✕) y <code>"confirmDelete"</code> ("¿Eliminar? Sí / No"). El helper <code>run(action)</code> ejecuta la action, muestra el error si lo hay y, si sale bien, regresa a <code>"view"</code> y llama <code>onChanged()</code>.</p>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="funciones">3. Referencia de funciones por archivo</h2>
+
+<h3>Componentes <span class="tag t-client">cliente</span></h3>
+
+<div class="fn">
+  <div class="sig">AdminPanel()</div>
+  <div class="body"><code>src/components/DMS/AdminPanel.tsx</code>. Sección "Administración": botones Usuarios/Tags, card "Subir documento" (<code>md:col-span-2</code>) y card "Áreas" (1/3). Dueño del estado <code>areas</code> y de <code>loadAreas</code>.</div>
+</div>
+
+<div class="fn">
+  <div class="sig">UploadDocumentsComponent({ areas: Area[] })</div>
+  <div class="body"><code>src/app/DMS/documents/uploadDocumentsComponent.tsx</code>. Tres vistas según estado: zona de drop (sin <code>file</code>), formulario de nombre (con <code>file</code>), card del documento (con <code>uploaded</code>). Contiene <code>handleUpload</code> (flujo 2.1) y <code>handleDrop</code>. El <code>accept</code> del input sale de <code>SupportedFileTypes</code>.</div>
+</div>
+
+<div class="fn">
+  <div class="sig">UploadedDocumentCard({ document: UploadedDocument, areas: Area[], onDone })</div>
+  <div class="body"><code>src/app/DMS/documents/uploadedDocumentCard.tsx</code>. Nombre, badge de tipo (<code>FILE_SUFFIX[fileType]</code> sin punto, en mayúsculas), pellets y dropdown. <code>handleAssign</code> (flujo 2.2). <code>onDone</code> regresa a la zona de drop. Exporta el tipo <code>UploadedDocument = { id, name, fileType }</code>.</div>
+</div>
+
+<div class="fn">
+  <div class="sig">CreateAreaComponent({ onCreated })</div>
+  <div class="body"><code>src/app/DMS/areas/createAreaComponent.tsx</code>. Input + botón. <code>handleCreate</code> llama <code>createArea(name.trim())</code>; si sale bien limpia el input, muestra "Área creada." y llama <code>onCreated()</code>.</div>
+</div>
+
+<div class="fn">
+  <div class="sig">AreaListComponent({ areas, onChanged }) · AreaItem({ area, onChanged })</div>
+  <div class="body"><code>src/app/DMS/areas/areaListComponent.tsx</code>. Lista de <code>AreaItem</code>; muestra "Todavía no hay áreas." si está vacía.</div>
+</div>
+
+<h3>Server Actions <span class="tag t-action">action</span></h3>
+<p>Todas devuelven una unión discriminada por <code>ok</code>. En error: <code>{ ok: false, code, message }</code>, donde <code>message</code> es el <code>genericMessage</code> del <code>AppError</code>, o un mensaje genérico con <code>code: 'UNEXPECTED_ERROR'</code>.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Función</th><th>Archivo</th><th>Éxito devuelve</th><th>Llama a</th></tr></thead>
+  <tbody>
+    <tr><td><code>uploadDocument(input: PendingDocumentInput)</code></td><td rowspan="3"><code>src/app/DMS/documents/documents.actions.ts</code></td><td><code>{ ok, uuid, signedUrl }</code></td><td><code>createPendingDocument</code> + <code>createUploadUrl</code></td></tr>
+    <tr><td><code>confirmUploadedDocument(documentId)</code></td><td><code>{ ok }</code></td><td><code>confirmUpload</code></td></tr>
+    <tr><td><code>addDocumentToArea(documentId, areaId)</code></td><td><code>{ ok }</code></td><td><code>documentsProvider.addDocumentToArea</code></td></tr>
+    <tr><td><code>createArea(name)</code></td><td rowspan="4"><code>src/app/DMS/areas/areas.actions.ts</code></td><td><code>{ ok }</code></td><td><code>createNewArea</code></td></tr>
+    <tr><td><code>editArea(id, newName)</code></td><td><code>{ ok }</code></td><td><code>areasProvider.editArea</code></td></tr>
+    <tr><td><code>deleteArea(id)</code></td><td><code>{ ok }</code></td><td><code>areasProvider.deleteArea</code></td></tr>
+    <tr><td><code>fetchAllAreas()</code></td><td><code>{ ok, areas: Area[] }</code></td><td><code>areasProvider.fetchAllAreas</code></td></tr>
+  </tbody>
+</table>
+</div>
+<p><code>areas.actions.ts</code> centraliza el <code>catch</code> en <code>toActionError(action, err)</code>, que no se exporta porque un archivo <code>'use server'</code> solo puede exportar funciones <code>async</code>.</p>
+
+<h3>Documents <span class="tag t-service">service</span></h3>
+<p>Contrato: <code>src/lib/core/documents/provider/documents.provider.ts</code> · Implementación: <code>src/lib/core/documents/service/documents.service.ts</code> · Instancia: <code>documentsProvider</code></p>
+
+<div class="fn">
+  <div class="sig">createPendingDocument(input: PendingDocumentInput): Promise&lt;{ id, key }&gt;</div>
+  <div class="body">
+    <code>PendingDocumentInput = { name, description?, fileType: SupportedFileTypes, fileSize }</code>. Crea la fila pendiente (ver flujo 2.1).
+    <ul>
+      <li><code>AuthError.AuthenticationFailure</code> 401 — sin sesión.</li>
+      <li><code>AccessError.RoleCheckFailed</code> 500 — falló la RPC <code>has_full_document_access</code>.</li>
+      <li><code>AccessError.AuthorizationFailure</code> 403 — la RPC devolvió falso, o RLS rechazó el insert (<code>42501</code>).</li>
+      <li><code>DocumentError.CreateFailed</code> 500 — otro error de insert o 3 colisiones de <code>id</code>.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="fn">
+  <div class="sig">confirmUpload(documentId: string): Promise&lt;void&gt;</div>
+  <div class="body">
+    Marca <code>uploaded_at</code> solo si sigue en <code>NULL</code>.
+    <ul>
+      <li><code>DocumentError.ConfirmFailed</code> 500 — error de Postgres.</li>
+      <li><code>DocumentError.UploadNotPending</code> 404 — 0 filas: ya confirmada, no existe, o RLS la filtró.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="fn">
+  <div class="sig">addDocumentToArea(documentId: string, areaId: string): Promise&lt;void&gt;</div>
+  <div class="body">
+    Inserta en <code>document_areas</code>. Idempotente (un duplicado es éxito).
+    <ul>
+      <li><code>AccessError.AuthorizationFailure</code> 403 — <code>42501</code>.</li>
+      <li><code>DocumentError.AssignAreaFailed</code> 404 — <code>23503</code>; 500 — cualquier otro.</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Areas <span class="tag t-service">service</span></h3>
+<p>Contrato: <code>src/lib/core/areas/provider/areas.provider.ts</code> · Implementación: <code>src/lib/core/areas/service/area.service.ts</code> · Instancia: <code>areasProvider</code></p>
+<p>Tipo: <code>Area = Pick&lt;Tables&lt;'areas'&gt;, 'id' | 'name'&gt;</code>. Para exponer más columnas, se agregan al <code>Pick</code> y al <code>.select()</code> de <code>fetchAllAreas</code>.</p>
+<p>Ninguna función valida el rol en código: lo decide RLS. El helper <code>insufficientPrivilege(action, message)</code> construye el <code>AccessError</code> 403 para cualquier <code>42501</code>, con el nombre de la operación en el detalle.</p>
+
+<div class="fn">
+  <div class="sig">createNewArea(areaName: string): Promise&lt;void&gt;</div>
+  <div class="body"><code>42501</code> → <code>AccessError</code> 403 · <code>23505</code> → <code>AreaError.CreateFailed</code> 409 "Ya existe un área con ese nombre." · otro → <code>CreateFailed</code> 500.</div>
+</div>
+<div class="fn">
+  <div class="sig">editArea(uuid: string, newAreaName: string): Promise&lt;void&gt;</div>
+  <div class="body"><code>42501</code> → 403 · <code>23505</code> → <code>UpdateFailed</code> 409 · otro → <code>UpdateFailed</code> 500 · 0 filas → <code>UpdateFailed</code> 404 (no existe o RLS la filtró).</div>
+</div>
+<div class="fn">
+  <div class="sig">deleteArea(uuid: string): Promise&lt;void&gt;</div>
+  <div class="body"><code>42501</code> → 403 · otro → <code>DeleteFailed</code> 500 · 0 filas → <code>DeleteFailed</code> 404. Efectos en cascada: ver <a href="#db">base de datos</a>.</div>
+</div>
+<div class="fn">
+  <div class="sig">fetchAllAreas(): Promise&lt;Area[]&gt;</div>
+  <div class="body">Ordenadas por nombre A→Z. Un usuario sin permiso recibe <code>[]</code>, no un error. <code>42501</code> → 403 · otro → <code>FetchFailed</code> 500.</div>
+</div>
+
+<h3>Storage <span class="tag t-service">service</span></h3>
+<p>Contrato: <code>src/lib/core/storage/provider/storage.provider.ts</code> · Implementación: <code>src/lib/core/storage/service/storage.service.ts</code> · Instancia: <code>storageProvider</code></p>
+
+<div class="fn">
+  <div class="sig">createDocumentKey(uuid: string, fileType: SupportedFileTypes): string</div>
+  <div class="body">Devuelve <code>documents/&lt;uuid&gt;&lt;sufijo&gt;</code>, con el sufijo de <code>FILE_SUFFIX</code>. Ej. <code>documents/3f1c….pdf</code>.</div>
+</div>
+<div class="fn">
+  <div class="sig">createUploadUrl({ key, contentType, size }): Promise&lt;SignedUrl&gt;</div>
+  <div class="body">URL de <code>PUT</code> válida 5 min (<code>UPLOAD_URL_TTL_SECONDS</code>). Firma <code>content-type</code> y <code>content-length</code>: si el navegador manda otro tipo o tamaño, R2 responde 403. Error: <code>StorageError.UploadUrlFailed</code> 500.</div>
+</div>
+<div class="fn">
+  <div class="sig">createDownloadUrl({ key, fileName }): Promise&lt;SignedUrl&gt;</div>
+  <div class="body">URL de <code>GET</code> válida 5 min, con <code>Content-Disposition</code> para descargar con el nombre original. Todavía no se usa desde la UI. Error: <code>StorageError.DownloadUrlFailed</code>.</div>
+</div>
+
+<h4>Exportaciones auxiliares de <code>storage.provider.ts</code></h4>
+<ul>
+  <li><code>enum SupportedFileTypes</code> — MIME aceptados: PDF, DOCX, XLSX, PPTX, PNG, JPEG.</li>
+  <li><code>FILE_SUFFIX</code> — MIME → extensión. Con <code>satisfies Record&lt;SupportedFileTypes, …&gt;</code>, TypeScript marca error si un tipo del enum no tiene extensión.</li>
+  <li><code>isSupportedFileType(type: string): type is SupportedFileTypes</code> — type guard usado por el componente de subida.</li>
+</ul>
+
+<h3>Soporte</h3>
+<div class="fn">
+  <div class="sig">createSupabaseServerClient()</div>
+  <div class="body"><code>src/lib/core/auth/serverClient.ts</code>. Cliente de Supabase que lee la sesión de las cookies del request y usa la publishable key, así que RLS y <code>auth.uid()</code> aplican como el usuario real. Se crea uno nuevo por llamada para no mezclar sesiones entre requests.</div>
+</div>
+<div class="fn">
+  <div class="sig">isAdminRole(role: Role): boolean</div>
+  <div class="body"><code>src/lib/core/auth/roles.ts</code>. <code>true</code> para <code>admin</code> y <code>superadmin</code>. Solo decide qué se muestra en la UI.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="db">4. Base de datos</h2>
+
+<h3>Tablas</h3>
+
+<h4><code>documents</code></h4>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Columna</th><th>Tipo</th><th>Uso</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID PK</td><td>Lo genera el servidor (<code>crypto.randomUUID()</code>) para calcular la key antes del insert.</td></tr>
+    <tr><td><code>name</code></td><td>TEXT NOT NULL</td><td>Nombre visible y nombre de descarga.</td></tr>
+    <tr><td><code>description</code></td><td>TEXT</td><td>Opcional. La UI aún no lo pide.</td></tr>
+    <tr><td><code>file_path</code></td><td>TEXT NOT NULL</td><td>Key del objeto en R2.</td></tr>
+    <tr><td><code>file_type</code></td><td>TEXT NOT NULL</td><td>MIME.</td></tr>
+    <tr><td><code>file_size</code></td><td>BIGINT NOT NULL</td><td>Bytes.</td></tr>
+    <tr><td><code>uploaded_by</code></td><td>UUID → auth.users</td><td>Sale de la sesión.</td></tr>
+    <tr><td><code>uploaded_at</code></td><td>TIMESTAMPTZ NULL</td><td><code>NULL</code> = subida pendiente. Se llena al confirmar.</td></tr>
+    <tr><td><code>deleted_at</code>, <code>deleted_by</code></td><td>—</td><td>Soft delete. El cron <code>hard-delete-documents</code> borra archivo y fila después de 30 días.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4><code>areas</code></h4>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Columna</th><th>Tipo</th><th>Uso</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID PK</td><td><code>DEFAULT gen_random_uuid()</code></td></tr>
+    <tr><td><code>name</code></td><td>TEXT NOT NULL UNIQUE</td><td>Único exacto (distingue mayúsculas).</td></tr>
+    <tr><td><code>created_by</code></td><td>UUID → auth.users</td><td><code>DEFAULT auth.uid()</code></td></tr>
+    <tr><td><code>created_at</code></td><td>TIMESTAMPTZ</td><td><code>DEFAULT now()</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4><code>document_areas</code> (relación N:M)</h4>
+<p><code>document_id → documents(id) ON DELETE CASCADE</code>, <code>area_id → areas(id) ON DELETE CASCADE</code>, PK <code>(document_id, area_id)</code>.</p>
+
+<h4><code>profiles.area_id</code></h4>
+<p>Cada usuario pertenece a una sola área. <code>REFERENCES areas(id) ON DELETE SET NULL</code>.</p>
+
+<h3>Efectos de borrar un área</h3>
+<ul>
+  <li>Sus filas en <code>document_areas</code> se borran (cascade). Los documentos no se tocan.</li>
+  <li>Los <code>profiles</code> con esa área quedan con <code>area_id = NULL</code>.</li>
+</ul>
+
+<h3>Políticas RLS</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Tabla</th><th>SELECT</th><th>INSERT</th><th>UPDATE</th><th>DELETE</th></tr></thead>
+  <tbody>
+    <tr><td><code>documents</code></td><td>authenticated</td><td><code>is_admin()</code></td><td><code>is_admin()</code></td><td><code>is_admin()</code></td></tr>
+    <tr><td><code>areas</code></td><td><code>is_admin()</code></td><td><code>is_admin()</code></td><td><code>is_admin()</code></td><td><code>is_admin()</code></td></tr>
+    <tr><td><code>document_areas</code></td><td>authenticated</td><td><code>is_admin()</code></td><td><code>is_admin()</code></td><td><code>is_admin()</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Funciones SQL (RPC)</h3>
+<ul>
+  <li><code>public.is_admin()</code> — <code>true</code> si el <code>profiles.role</code> de <code>auth.uid()</code> es <code>admin</code> o <code>superadmin</code>. <code>SECURITY DEFINER</code>; ejecutable solo por <code>authenticated</code>.</li>
+  <li><code>public.has_full_document_access()</code> — hoy devuelve <code>is_admin()</code>. La usa <code>createPendingDocument</code> como chequeo previo; existe para poder cambiar la regla de subida sin tocar el código.</li>
+</ul>
+
+<h3>Migraciones relevantes</h3>
+<p>En <code>supabase/migrations/</code>: <code>…_area_table_creation.sql</code>, <code>…_create_documents_table.sql</code>, <code>…_create_document_area_table.sql</code>, <code>…_can_upload_document_rpc.sql</code>, <code>20261119120000_profiles_area_fk.sql</code>, <code>20261119130000_areas_created_by_default.sql</code>.</p>
+<p>Tras cambiar una migración o agregar una: <code>npx supabase db reset</code> y <code>npx supabase gen types typescript --local &gt; src/lib/core/database.types.ts</code>.</p>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="errores">5. Manejo de errores</h2>
+
+<h3>Jerarquía</h3>
+<p><code>AppError</code> (<code>src/lib/errors/base.ts</code>, abstracta) tiene:</p>
+<ul>
+  <li><code>code</code> — identificador estable (valor de un enum).</li>
+  <li><code>detail</code> — texto técnico para logs. Nunca llega al usuario.</li>
+  <li><code>genericMessage</code> — texto para el usuario.</li>
+  <li><code>statusCode</code> — HTTP equivalente.</li>
+</ul>
+<p>Subclases y sus códigos:</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Clase</th><th>Archivo</th><th>Códigos usados en este módulo</th></tr></thead>
+  <tbody>
+    <tr><td><code>AuthError</code></td><td><code>errors/auth.ts</code></td><td><code>AuthenticationFailure</code> (sin sesión)</td></tr>
+    <tr><td><code>AccessError</code></td><td><code>errors/access.ts</code></td><td><code>AuthorizationFailure</code> (sin permiso), <code>RoleCheckFailed</code> (falló la consulta de rol)</td></tr>
+    <tr><td><code>DocumentError</code></td><td><code>errors/documents.ts</code></td><td><code>CreateFailed</code>, <code>ConfirmFailed</code>, <code>UploadNotPending</code>, <code>AssignAreaFailed</code></td></tr>
+    <tr><td><code>AreaError</code></td><td><code>errors/areas.ts</code></td><td><code>CreateFailed</code>, <code>UpdateFailed</code>, <code>DeleteFailed</code>, <code>FetchFailed</code>, <code>AssignUserFailed</code> (aún sin uso)</td></tr>
+    <tr><td><code>StorageError</code></td><td><code>errors/storage.ts</code></td><td><code>UploadUrlFailed</code>, <code>DownloadUrlFailed</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Recorrido de un error</h3>
+<pre><code>Postgres error.code ──► service: throw new XxxError(code, detail, genericMessage, status)
+                         │
+                         ▼
+action catch: console.error(`[action] ${code} (${status}): ${detail}`)   → logs del servidor
+              return { ok: false, code, message: genericMessage }       → navegador
+                         │
+                         ▼
+componente: setError(result.message); status = "error"</code></pre>
+<p>Errores que no son <code>AppError</code> se registran completos y devuelven <code>code: 'UNEXPECTED_ERROR'</code>. En el componente, un <code>catch</code> alrededor de la action atrapa fallas de red, de CORS o de una action que no llegó al servidor.</p>
+
+<h3>Códigos de Postgres que se traducen</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Código</th><th>Significado</th><th>Cuándo aparece</th></tr></thead>
+  <tbody>
+    <tr><td><code>42501</code></td><td>insufficient_privilege</td><td>RLS rechaza un <strong>INSERT</strong>, o falta un <code>GRANT</code> en la tabla.</td></tr>
+    <tr><td><code>23505</code></td><td>unique_violation</td><td>Nombre de área repetido; <code>id</code> de documento repetido; pareja documento-área repetida.</td></tr>
+    <tr><td><code>23503</code></td><td>foreign_key_violation</td><td>Asignar un área o documento que no existe.</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="card warn">
+  <strong>RLS en UPDATE, DELETE y SELECT no produce error.</strong> Filtra las filas en silencio: el UPDATE o DELETE afecta 0 filas y el SELECT devuelve menos filas (o ninguna). Por eso <code>editArea</code>, <code>deleteArea</code> y <code>confirmUpload</code> encadenan <code>.select('id')</code> y tratan 0 filas como error, y por eso un no-admin recibe <code>[]</code> en <code>fetchAllAreas</code>. Encadenar <code>.select()</code> exige además que la fila pase la política de SELECT.
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="config">6. Configuración y variables de entorno</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Variable</th><th>Archivo que la valida</th><th>Visible en navegador</th></tr></thead>
+  <tbody>
+    <tr><td><code>NEXT_PUBLIC_SUPABASE_URL</code>, <code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code></td><td><code>src/lib/publicEnv.ts</code></td><td>Sí (son públicas por diseño)</td></tr>
+    <tr><td><code>R2_ACCOUNT_ID</code>, <code>R2_ACCESS_KEY_ID</code>, <code>R2_SECRET_ACCESS_KEY</code>, <code>R2_BUCKET</code></td><td><code>src/lib/privateEnv.ts</code></td><td>No</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Requisitos de R2</h3>
+<ul>
+  <li><strong>CORS del bucket:</strong> debe permitir <code>PUT</code> con el header <code>content-type</code> desde el dominio de producción y desde <code>http://localhost:3000</code>. Sin esto, el paso 3 de la subida falla en el navegador con un <code>TypeError</code> (sin respuesta HTTP).</li>
+  <li><strong>Checksums:</strong> el <code>S3Client</code> usa <code>requestChecksumCalculation: 'WHEN_REQUIRED'</code>. Con el valor por defecto, el SDK agrega a las URLs firmadas un checksum que el navegador no envía y R2 rechaza.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="extender">7. Cómo extender</h2>
+
+<dl>
+  <dt>Aceptar un nuevo tipo de archivo</dt>
+  <dd>Agregar el MIME a <code>SupportedFileTypes</code> y su extensión a <code>FILE_SUFFIX</code> (TypeScript obliga a hacer ambos). El <code>accept</code> del input y la validación del componente se actualizan solos.</dd>
+
+  <dt>Agregar una operación de áreas</dt>
+  <dd>(1) Firma en <code>AreasProvider</code>. (2) Implementación en <code>SupabaseAreasService</code>, traduciendo <code>42501</code> con <code>insufficientPrivilege</code> y usando <code>.select()</code> si es UPDATE o DELETE. (3) Código en <code>AreaErrorCode</code> si hace falta. (4) Action en <code>areas.actions.ts</code> con <code>toActionError</code>. (5) Si cambia la lista, llamar <code>onChanged</code>/<code>loadAreas</code> desde el componente.</dd>
+
+  <dt>Mostrar más columnas de un área</dt>
+  <dd>Agregar la columna al <code>Pick</code> de <code>Area</code> y al <code>.select('id, name, …')</code> de <code>fetchAllAreas</code>.</dd>
+
+  <dt>Quitar un área de un documento</dt>
+  <dd>Agregar <code>removeDocumentFromArea</code> en <code>DocumentsProvider</code>/service (<code>DELETE … RETURNING</code>, 0 filas = no estaba asignada o sin permiso), su action en <code>documents.actions.ts</code>, y un botón en el pellet de <code>UploadedDocumentCard</code> que lo saque de <code>assignedIds</code>.</dd>
+
+  <dt>Dar a usuarios normales acceso de lectura a áreas</dt>
+  <dd>Cambiar la política <code>areas_select</code> en una migración nueva. El código no necesita cambios porque no valida el rol.</dd>
+
+  <dt>Cambiar quién puede subir documentos</dt>
+  <dd>Cambiar la RPC <code>has_full_document_access</code> <em>y</em> la política <code>documents_insert</code>. Hoy el service consulta la RPC y RLS vuelve a validar en el insert; si solo se cambia una, la otra seguirá bloqueando.</dd>
+</dl>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="limites">8. Comportamientos no obvios y límites actuales</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Comportamiento</th><th>Consecuencia</th></tr></thead>
+  <tbody>
+    <tr><td><strong>No existe limpieza de subidas pendientes.</strong> El cron <code>hard-delete-documents</code> solo procesa filas con <code>deleted_at</code>; no toca filas con <code>uploaded_at IS NULL</code>.</td><td>Una subida que falla después del paso 2 deja una fila pendiente para siempre (y quizá un objeto en R2). Las consultas de listado deben filtrar <code>uploaded_at IS NOT NULL</code>.</td></tr>
+    <tr><td>El tipo de archivo solo se valida en el navegador.</td><td><code>uploadDocument</code> confía en <code>fileType</code>. Un tipo no soportado haría que <code>FILE_SUFFIX[fileType]</code> sea <code>undefined</code> y la key termine en <code>"undefined"</code>.</td></tr>
+    <tr><td>La confirmación no verifica que el objeto exista en R2.</td><td>Se confía en que el navegador recibió <code>response.ok</code> del <code>PUT</code>.</td></tr>
+    <tr><td>Las áreas asignadas de la card viven en estado local (<code>assignedIds</code>).</td><td>Al recargar la página la card desaparece. Las asignaciones sí persisten en <code>document_areas</code>, pero no hay consulta que las lea.</td></tr>
+    <tr><td><code>fetchAllAreas</code> se llama al montar <code>AdminPanel</code> y después de cada cambio.</td><td>Cambios hechos por otro admin no se ven hasta que pase uno de esos dos eventos.</td></tr>
+    <tr><td><code>areas.name</code> es único exacto.</td><td>"Marketing" y "marketing" pueden coexistir.</td></tr>
+    <tr><td>El comentario de <code>areas_select</code> en la migración dice "cualquier usuario autenticado".</td><td>La política real es <code>is_admin()</code>; el comentario está desactualizado.</td></tr>
+    <tr><td><code>supabase/seed.sql</code> tiene <code>&lt;LOCAL_SECRET_KEY&gt;</code> en lugar de la key local.</td><td>En local, el cron no se autentica hasta que se reemplaza por el valor de <code>npx supabase status</code> (sin hacer commit de ese cambio).</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="glosario">9. Glosario</h2>
+<dl>
+  <dt>Área</dt>
+  <dd>Grupo de la empresa. Un documento puede tener varias (<code>document_areas</code>); un usuario tiene una (<code>profiles.area_id</code>).</dd>
+
+  <dt>Fila pendiente</dt>
+  <dd>Fila de <code>documents</code> con <code>uploaded_at IS NULL</code>: el documento está reservado pero su archivo no se ha confirmado.</dd>
+
+  <dt>Key</dt>
+  <dd>Ruta de un objeto dentro del bucket de R2 (<code>documents/&lt;uuid&gt;.pdf</code>). Se guarda en <code>documents.file_path</code>.</dd>
+
+  <dt>URL firmada (presigned URL)</dt>
+  <dd>URL temporal generada en el servidor que autoriza una sola operación sobre una key (subir o descargar) sin exponer credenciales.</dd>
+
+  <dt>RLS (Row Level Security)</dt>
+  <dd>Políticas de Postgres que deciden, por fila y por operación, qué puede hacer el usuario de la sesión. Fuente de verdad de los permisos.</dd>
+
+  <dt>RPC</dt>
+  <dd>Función SQL llamada desde código con <code>supabase.rpc('nombre')</code>.</dd>
+
+  <dt>Provider / Service</dt>
+  <dd>Provider: interfaz TypeScript con las operaciones de un módulo. Service: su implementación concreta para Supabase o R2.</dd>
+
+  <dt>Server Action</dt>
+  <dd>Función <code>async</code> en un archivo <code>'use server'</code>. Se llama desde el navegador como si fuera local, pero corre en el servidor.</dd>
+
+  <dt>Cliente de sesión</dt>
+  <dd>El cliente de Supabase de <code>createSupabaseServerClient()</code>: actúa como el usuario del request, por lo que RLS aplica.</dd>
+
+  <dt>Idempotente</dt>
+  <dd>Que repetir la operación no cambia el resultado. Aplica a <code>confirmUpload</code> y <code>addDocumentToArea</code>.</dd>
+</dl>
+
+<footer>
+  Referencia de <code>docs/</code>. Las decisiones de arquitectura de fondo están en <code>docs/decisions/</code> (en particular ADR-005, ADR-008 y ADR-010).
+</footer>
+
+</main>
+</body>
+</html>

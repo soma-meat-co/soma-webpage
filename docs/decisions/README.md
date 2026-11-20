@@ -16,3 +16,4 @@ Registro de decisiones arquitectónicas del proyecto. Cada ADR documenta una dec
 | [ADR-008](./ADR-008-phased-document-access.md) | Acceso a documentos por fases | Aceptado (fase 1) |
 | [ADR-009](./ADR-009-view-only-documents-and-access-log.md) | Documentos de solo lectura y registro de accesos | Aceptado |
 | [ADR-010](./ADR-010-direct-upload-with-pending-row.md) | Subida directa a R2 con fila previa | Aceptado |
+| [ADR-011](./ADR-011-folders-and-area-inheritance.md) | Folders y herencia de áreas | Aceptado |
