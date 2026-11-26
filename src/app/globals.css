@@ -57,6 +57,14 @@
   --color-soma-gray-lt: #D4D5D7;
   --color-soma-black: #0D0B09;
   --color-soma-off-wh: #FFFFFF;
+  /* Neutros cálidos del DMS (diálogos): fondo crema, arena, bordes y textos secundarios */
+  --color-soma-cream: #FAF7F2;
+  --color-soma-cream-dk: #F5F0EA;
+  --color-soma-sand: #F2ECE4;
+  --color-soma-line: #E4DBD0;
+  --color-soma-taupe: #5C4D42;
+  --color-soma-taupe-lt: #7A6A5E;
+  --color-soma-taupe-xlt: #B8AA9C;
   /* Sombra por defecto de los elementos: se usa con la clase shadow-soma */
   --shadow-soma: 0 1px 2px rgb(13 11 9 / 0.08), 0 4px 12px rgb(13 11 9 / 0.1);
 }

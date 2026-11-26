@@ -117,7 +117,7 @@
 <header>
   <h1>Documentos y áreas — cómo funciona</h1>
   <p>Referencia técnica del estado actual del código: flujos, funciones, archivos, base de datos y errores.</p>
-  <p>Alcance: subida de documentos a R2, asignación de áreas a documentos y administración de áreas en el DMS.</p>
+  <p>Alcance: subida de documentos a R2, asignación de áreas a documentos, administración de áreas y carpetas (navegar, crear, editar, mover y heredar áreas).</p>
 </header>
 
 <nav>
@@ -129,6 +129,11 @@
         <li><a href="#flujo-subida">Subir un documento</a></li>
         <li><a href="#flujo-asignar">Asignar un área a un documento</a></li>
         <li><a href="#flujo-areas">Cargar, crear, editar y borrar áreas</a></li>
+        <li><a href="#flujo-navegar">Navegar carpetas</a></li>
+        <li><a href="#flujo-crear-carpeta">Crear una carpeta</a></li>
+        <li><a href="#flujo-editar">Editar una carpeta o un documento (nombre, ubicación, áreas)</a></li>
+        <li><a href="#flujo-herencia">Herencia de áreas</a></li>
+        <li><a href="#flujo-cache">Caché de navegación y refresco</a></li>
       </ol>
     </li>
     <li><a href="#funciones">Referencia de funciones por archivo</a></li>
@@ -276,6 +281,130 @@ Supabase (Postgres + RLS)  /  Cloudflare R2</code></pre>
 
 <p><code>AreaItem</code> (dentro de <code>areaListComponent.tsx</code>) tiene tres modos: <code>"view"</code>, <code>"editing"</code> (input + ✓/✕) y <code>"confirmDelete"</code> ("¿Eliminar? Sí / No"). El helper <code>run(action)</code> ejecuta la action, muestra el error si lo hay y, si sale bien, regresa a <code>"view"</code> y llama <code>onChanged()</code>.</p>
 
+<h3 id="flujo-navegar">2.4 Navegar carpetas</h3>
+
+<p>Las carpetas forman un árbol: cada fila de <code>folders</code> apunta a su padre con <code>parent_id</code>; <code>NULL</code> significa que cuelga de la raíz. La raíz no es una fila: en la UI se llama <strong>"Documentos"</strong>.</p>
+
+<p>Ruta: <code>src/app/DMS/documents/[[...folderId]]/page.tsx</code> (catch-all opcional, Server Component).</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>URL</th><th><code>folderId</code></th><th>Muestra</th></tr></thead>
+  <tbody>
+    <tr><td><code>/DMS/documents</code></td><td><code>null</code></td><td>Raíz: carpetas con <code>parent_id IS NULL</code> y documentos con <code>folder_id IS NULL</code>.</td></tr>
+    <tr><td><code>/DMS/documents/&lt;uuid&gt;</code></td><td><code>&lt;uuid&gt;</code></td><td>Contenido directo de esa carpeta.</td></tr>
+    <tr><td><code>/DMS/documents/a/b</code> o id que no es UUID</td><td>—</td><td><code>notFound()</code> (404) sin consultar la base.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<ol class="flow">
+  <li><span class="tag t-client">servidor</span> <code>DocumentsFolderPage</code> valida los segmentos con <code>UUID_PATTERN</code>. Mientras carga, Next muestra <code>loading.tsx</code> (skeleton con la misma sangría).</li>
+  <li>
+    <span class="tag t-service">service</span> <code>foldersProvider.getFolderElements(folderId)</code> → <code>supabase.rpc('get_folder_documents', { p_folder_id })</code>.
+    La página llama al provider directamente (es Server Component; no pasa por una action).
+  </li>
+  <li>
+    <span class="tag t-db">db</span> <code>get_folder_documents</code> (SECURITY INVOKER):
+    <ul>
+      <li>Chequea <code>can_access_documents()</code> (hoy: hay sesión). Si no, <code>42501</code>.</li>
+      <li>Junta ids de subcarpetas directas y de documentos directos con <code>deleted_at IS NULL</code> y <code>uploaded_at IS NOT NULL</code>.</li>
+      <li>Si no es la raíz, recorre la carpeta y sus ancestros (<code>WITH RECURSIVE</code> + <code>CYCLE</code>) para armar <code>path</code> (raíz → actual) y las áreas heredadas.</li>
+      <li>Devuelve <code>{ path, folders, documents }</code> en JSON; cada elemento trae <code>tags</code> = áreas propias ∪ heredadas, ordenadas y sin repetidos.</li>
+    </ul>
+  </li>
+  <li><span class="tag t-client">servidor</span> Si hay <code>folderId</code> pero <code>path</code> llegó vacío, la carpeta no existe → <code>notFound()</code> (fuera del <code>try</code>, porque funciona lanzando). Un error de la consulta se muestra en la página con <code>handleError(...).message</code>.</li>
+  <li>
+    <span class="tag t-client">render</span>
+    <code>FolderBreadcrumbs</code> (Documentos › … › actual), link "Regresar a &lt;padre&gt;" (el penúltimo de <code>path</code>), título con <code>CreateFolderButton</code>, y la lista: primero <code>FolderRow</code> (link a <code>/DMS/documents/&lt;id&gt;</code> + Editar), luego <code>DocumentRow</code> (Ver, Descargar, Editar).
+  </li>
+</ol>
+
+<p><strong>Botón "Volver" del layout.</strong> <code>DmsShell.tsx</code> pinta <code>BackButton</code> en toda ruta del DMS menos <code>/DMS</code>. Dentro de <code>/DMS/documents/**</code> le pasa <code>href="/DMS"</code>, así que "Volver" siempre lleva al inicio (si usara <code>router.back()</code> regresaría carpeta por carpeta). Para subir un nivel están el breadcrumb y "Regresar a …".</p>
+
+<h3 id="flujo-crear-carpeta">2.5 Crear una carpeta</h3>
+
+<p>Punto de entrada: <code>CreateFolderButton</code> (<code>src/components/DMS/CreateFolderButton.tsx</code>), junto al nombre de la carpeta actual. Solo se pinta si <code>isAdminRole(user.role)</code>; esconderlo es presentación, RLS decide.</p>
+<ol class="flow">
+  <li><span class="tag t-client">cliente</span> Abre <code>DmsDialog</code> con el input "Nombre". La carpeta nueva se crea <strong>dentro de la que se está viendo</strong> (<code>parentId = folderId</code> de la página, <code>null</code> en la raíz).</li>
+  <li><span class="tag t-action">action</span> <code>createFolder(folderName, parentId)</code> <small>src/app/DMS/admin/folders/folders.actions.ts</small>: hace <code>trim()</code>; vacío → <code>FOLDER_NAME_REQUIRED</code> sin llamar a la base.</li>
+  <li><span class="tag t-service">service</span> <code>foldersProvider.createFolder</code>: <code>INSERT INTO folders (folder_name, parent_id)</code>; <code>created_by</code> lo pone el <code>DEFAULT auth.uid()</code>.
+    <ul>
+      <li><code>42501</code> → <code>AccessError</code> 403 (RLS <code>folders_insert</code> = <code>is_admin()</code>).</li>
+      <li><code>23505</code> → <code>FolderError.CreateFailed</code> 409 (ya hay una carpeta con ese nombre en el mismo padre).</li>
+      <li><code>23503</code> → <code>CreateFailed</code> 404 (el padre no existe).</li>
+    </ul>
+  </li>
+  <li><span class="tag t-action">action</span> <code>refreshFolderPages()</code> (ver <a href="#flujo-cache">2.8</a>) y devuelve <code>{ ok: true }</code>.</li>
+  <li><span class="tag t-client">cliente</span> Cierra el diálogo; la página se vuelve a pintar con la carpeta nueva.</li>
+</ol>
+<p>La carpeta nueva no tiene áreas propias; hereda las de sus ancestros. Las propias se agregan con "Editar".</p>
+
+<h3 id="flujo-editar">2.6 Editar una carpeta o un documento</h3>
+
+<p>Punto de entrada: <code>EditItemButton</code> (<code>src/components/DMS/EditItemButton.tsx</code>), en cada <code>FolderRow</code> y <code>DocumentRow</code> (también en "Documentos recientes" de <code>/DMS</code>). Solo admin. Un mismo diálogo cambia <strong>nombre, ubicación y áreas propias</strong>; mover es cambiar la ubicación.</p>
+
+<h4>Al abrir el diálogo</h4>
+<ol class="flow">
+  <li><span class="tag t-client">cliente</span> <code>handleOpenChange(true)</code> reinicia el formulario con el nombre y la carpeta actuales, vacía <code>destinations</code> y pone <code>isLoading</code>.</li>
+  <li>
+    <span class="tag t-action">action</span> <code>getEditOptions({ kind, id })</code> corre en paralelo:
+    <ul>
+      <li><code>foldersProvider.listAllFolders()</code> — <code>SELECT id, folder_name, parent_id FROM folders</code>.</li>
+      <li><code>areasProvider.fetchAllAreas()</code>.</li>
+      <li><code>getFolderAreaIds(id)</code> o <code>documentsProvider.getDocumentAreaIds(id)</code> — solo las áreas <strong>propias</strong>.</li>
+    </ul>
+    Con las carpetas, <code>buildDestinations(folders, excludeFolderId)</code> arma la ruta de cada una ("Documentos / Calidad / Auditorías"), ordena con <code>localeCompare('es')</code> y pone la raíz primero. Si se edita una carpeta, quita a esa carpeta y a todas sus descendientes (moverla ahí formaría un ciclo).
+  </li>
+  <li><span class="tag t-client">cliente</span> Llena el select "Ubicación" (<code>""</code> representa la raíz, porque un <code>&lt;option&gt;</code> no puede valer <code>null</code>) y los chips de "Áreas". Mientras <code>destinations</code> está vacío, "Guardar" queda deshabilitado.</li>
+</ol>
+
+<h4>Al guardar</h4>
+<ol class="flow">
+  <li><span class="tag t-action">action</span> <code>updateFolder(folderId, { folderName, parentId, areaIds })</code> o <code>updateDocument(documentId, { name, folderId, areaIds })</code>: <code>trim()</code> del nombre; vacío → <code>FOLDER_NAME_REQUIRED</code> / <code>DOCUMENT_NAME_REQUIRED</code>.</li>
+  <li><span class="tag t-service">service</span> <code>supabase.rpc('update_folder' | 'update_document', …)</code>.</li>
+  <li>
+    <span class="tag t-db">db</span> En una sola transacción (si algo falla, no se guarda nada):
+    <ul>
+      <li><code>is_admin()</code> o <code>42501</code>. Está explícito porque en un UPDATE, RLS no da error: solo filtra la fila.</li>
+      <li><code>UPDATE</code> nombre y padre/carpeta. 0 filas → <code>P0002</code>. En documentos solo si <code>deleted_at IS NULL</code>, y pone <code>updated_at = now()</code>.</li>
+      <li>Al cambiar <code>parent_id</code> se dispara el trigger <code>folders_prevent_cycle</code> → <code>23514</code> si el destino es una subcarpeta.</li>
+      <li><code>p_area_ids</code> es la lista <strong>completa</strong>: <code>DELETE</code> de las áreas propias que no vienen, <code>INSERT … ON CONFLICT DO NOTHING</code> de las nuevas.</li>
+    </ul>
+  </li>
+  <li><span class="tag t-action">action</span> <code>refreshFolderPages()</code>; el diálogo se cierra con <code>{ ok: true }</code> o muestra <code>message</code>.</li>
+</ol>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Código</th><th>Carpeta → mensaje</th><th>Documento → mensaje</th></tr></thead>
+  <tbody>
+    <tr><td><code>42501</code></td><td colspan="2"><code>AccessError.AuthorizationFailure</code> 403</td></tr>
+    <tr><td><code>P0002</code></td><td><code>FolderError.UpdateFailed</code> 404 "No se encontró la carpeta."</td><td><code>DocumentError.UpdateFailed</code> 404 (no existe o está eliminado)</td></tr>
+    <tr><td><code>23505</code></td><td><code>UpdateFailed</code> 409 — nombre repetido en el destino</td><td>— (los documentos no tienen nombre único)</td></tr>
+    <tr><td><code>23514</code></td><td><code>UpdateFailed</code> — mover dentro de sí misma o de una subcarpeta</td><td>—</td></tr>
+    <tr><td><code>23503</code></td><td colspan="2"><code>UpdateFailed</code> — la carpeta destino o un área ya no existen</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="flujo-herencia">2.7 Herencia de áreas</h3>
+<ul>
+  <li><strong>Áreas propias:</strong> filas en <code>folder_areas</code> (carpetas) o <code>document_areas</code> (documentos). Son las que muestra y edita el diálogo "Editar".</li>
+  <li><strong>Áreas heredadas:</strong> las propias de todas las carpetas ancestro. No se guardan en ningún lado: <code>get_folder_documents</code> las calcula en cada consulta.</li>
+  <li>Los <code>tags</code> que ve la lista son propias ∪ heredadas. Por eso una etiqueta que aparece en una fila puede no estar marcada en su diálogo: se quita editando la carpeta de arriba que la aporta.</li>
+  <li>Mover una carpeta o documento cambia sus heredadas automáticamente (cambian sus ancestros); las propias viajan con él.</li>
+  <li>Hoy los tags son informativos: la lectura no se restringe por área (<code>can_access_documents()</code> solo pide sesión).</li>
+</ul>
+
+<h3 id="flujo-cache">2.8 Caché de navegación y refresco</h3>
+<ul>
+  <li><code>next.config.ts</code> → <code>experimental.staleTimes.dynamic = 120</code>: el navegador reusa una carpeta ya visitada durante 120 s sin volver a pedirla (Router Cache). Navegar de ida y vuelta entre carpetas no consulta la base cada vez.</li>
+  <li>Toda action que escribe en carpetas llama <code>refreshFolderPages()</code>:
+    <pre><code>revalidatePath('/DMS/documents', 'layout') // la raíz y todas las carpetas ([[...folderId]])
+revalidatePath('/DMS')                      // "Documentos recientes" también muestra nombre y tags</code></pre>
+    Esto limpia el caché de <strong>quien hizo el cambio</strong>. Otros usuarios ven el cambio cuando vencen sus 120 s o recargan.</li>
+</ul>
+
 <!-- ═══════════════════════════════════════════ -->
 <h2 id="funciones">3. Referencia de funciones por archivo</h2>
 
@@ -306,6 +435,41 @@ Supabase (Postgres + RLS)  /  Cloudflare R2</code></pre>
   <div class="body"><code>src/app/DMS/areas/areaListComponent.tsx</code>. Lista de <code>AreaItem</code>; muestra "Todavía no hay áreas." si está vacía.</div>
 </div>
 
+<h4>Carpetas</h4>
+
+<div class="fn">
+  <div class="sig">DocumentsFolderPage({ params }) · DocumentsFolderLoading()</div>
+  <div class="body"><code>src/app/DMS/documents/[[...folderId]]/page.tsx</code> y <code>loading.tsx</code>. Server Component: valida la URL, llama <code>getFolderElements</code>, maneja 404 y error, y pinta breadcrumb, "Regresar a …", <code>CreateFolderButton</code> y la lista (flujo 2.4). <code>loading.tsx</code> es el skeleton.</div>
+</div>
+<div class="fn">
+  <div class="sig">FolderBreadcrumbs({ path: FolderPathItem[] })</div>
+  <div class="body"><code>src/components/DMS/FolderBreadcrumbs.tsx</code>. "Documentos" + un paso por elemento de <code>path</code>. El último es texto (<code>aria-current="page"</code>), los demás son links.</div>
+</div>
+<div class="fn">
+  <div class="sig">FolderRow({ folder: Folder })</div>
+  <div class="body"><code>src/components/DMS/FolderRow.tsx</code>. Link a <code>/DMS/documents/&lt;id&gt;</code> con ícono, nombre y tags; <code>EditItemButton</code> va fuera del link (<code>currentFolderId = folder.parent_id</code>).</div>
+</div>
+<div class="fn">
+  <div class="sig">DocumentRow({ document: FolderDocument })</div>
+  <div class="body"><code>src/components/DMS/DocumentRow.tsx</code>. Nombre, tags, fecha (<code>es-MX</code>, zona <code>America/Mexico_City</code>), <code>OpenDocumentButton</code>, <code>DownloadDocumentButton</code> y <code>EditItemButton</code> (<code>currentFolderId = document.folder_id</code>). Se usa también en "Documentos recientes".</div>
+</div>
+<div class="fn">
+  <div class="sig">CreateFolderButton({ parentId, parentName })</div>
+  <div class="body"><code>src/components/DMS/CreateFolderButton.tsx</code>. Solo admin (<code>useUser</code> + <code>isAdminRole</code>, si no devuelve <code>null</code>). Diálogo con "Nombre"; la nota "Hereda las áreas de …" solo aparece si <code>parentId</code> no es <code>null</code>. Flujo 2.5.</div>
+</div>
+<div class="fn">
+  <div class="sig">EditItemButton({ target: EditTarget, name, currentFolderId })</div>
+  <div class="body"><code>src/components/DMS/EditItemButton.tsx</code>. Solo admin. Pide opciones al abrir (<code>getEditOptions</code>) y guarda con <code>updateFolder</code>/<code>updateDocument</code> dentro de <code>startTransition</code>. Campos: Nombre, Ubicación (select nativo con la ruta completa) y Áreas (chips con <code>aria-pressed</code>). Flujo 2.6.</div>
+</div>
+<div class="fn">
+  <div class="sig">DmsDialog({ open, onOpenChange, trigger, icon, eyebrow, title, onSubmit, submitLabel, pendingLabel, isPending?, submitDisabled?, errorMessage?, children })</div>
+  <div class="body"><code>src/components/DMS/DmsDialog.tsx</code>. Diálogo de formulario reutilizable sobre Radix Dialog (paquete <code>radix-ui</code>): encabezado rojo con ícono, cuerpo con scroll (<code>children</code>), pie con "Cancelar" y el botón principal. Hace <code>preventDefault()</code> y llama <code>onSubmit</code>. Exporta también <code>DmsDialogField</code> (etiqueta + control), <code>DmsDialogNote</code> (aviso) y la clase <code>DMS_DIALOG_CONTROL</code> para inputs/selects. Lo usan "Nueva carpeta", "Editar" y la gestión de usuarios. Usa los tokens <code>soma-cream</code>, <code>soma-line</code>, <code>soma-sand</code> y <code>soma-taupe*</code> de <code>globals.css</code>.</div>
+</div>
+<div class="fn">
+  <div class="sig">BackButton({ href? }) · DmsShell</div>
+  <div class="body"><code>src/components/DMS/BackButton.tsx</code>, <code>src/app/DMS/DmsShell.tsx</code>. Con <code>href</code> hace <code>router.push(href)</code>; sin él, <code>router.back()</code> (o <code>/DMS</code> si no hay historial). <code>DmsShell</code> le pasa <code>href="/DMS"</code> en <code>/DMS/documents/**</code>.</div>
+</div>
+
 <h3>Server Actions <span class="tag t-action">action</span></h3>
 <p>Todas devuelven una unión discriminada por <code>ok</code>. En error: <code>{ ok: false, code, message }</code>, donde <code>message</code> es el <code>genericMessage</code> del <code>AppError</code>, o un mensaje genérico con <code>code: 'UNEXPECTED_ERROR'</code>.</p>
 
@@ -320,9 +484,21 @@ Supabase (Postgres + RLS)  /  Cloudflare R2</code></pre>
     <tr><td><code>editArea(id, newName)</code></td><td><code>{ ok }</code></td><td><code>areasProvider.editArea</code></td></tr>
     <tr><td><code>deleteArea(id)</code></td><td><code>{ ok }</code></td><td><code>areasProvider.deleteArea</code></td></tr>
     <tr><td><code>fetchAllAreas()</code></td><td><code>{ ok, areas: Area[] }</code></td><td><code>areasProvider.fetchAllAreas</code></td></tr>
+    <tr><td><code>createFolder(folderName, parentId)</code></td><td rowspan="11"><code>src/app/DMS/admin/folders/folders.actions.ts</code></td><td><code>{ ok }</code></td><td><code>foldersProvider.createFolder</code></td></tr>
+    <tr><td><code>getEditOptions(target)</code></td><td><code>{ ok, destinations, areas, selectedAreaIds }</code></td><td><code>listAllFolders</code> + <code>fetchAllAreas</code> + <code>getFolderAreaIds</code>/<code>getDocumentAreaIds</code></td></tr>
+    <tr><td><code>updateFolder(folderId, input)</code></td><td><code>{ ok }</code></td><td><code>foldersProvider.updateFolder</code></td></tr>
+    <tr><td><code>updateDocument(documentId, input)</code></td><td><code>{ ok }</code></td><td><code>documentsProvider.updateDocument</code></td></tr>
+    <tr><td><code>renameFolder(folderId, newName)</code></td><td><code>{ ok }</code></td><td><code>foldersProvider.renameFolder</code></td></tr>
+    <tr><td><code>moveFolder(folderId, newParentId)</code></td><td><code>{ ok }</code></td><td><code>foldersProvider.moveFolder</code></td></tr>
+    <tr><td><code>deleteFolder(folderId)</code></td><td><code>{ ok }</code></td><td><code>foldersProvider.deleteFolder</code></td></tr>
+    <tr><td><code>assignAreaToFolder(folderId, areaId)</code></td><td><code>{ ok }</code></td><td><code>foldersProvider.assignAreaToFolder</code></td></tr>
+    <tr><td><code>removeAreaFromFolder(folderId, areaId)</code></td><td><code>{ ok }</code></td><td><code>foldersProvider.removeAreaFromFolder</code></td></tr>
+    <tr><td><code>moveDocumentToFolder(documentId, folderId)</code></td><td><code>{ ok }</code></td><td><code>documentsProvider.moveDocumentToFolder</code></td></tr>
+    <tr><td colspan="3"><small>Todas usan <code>handleError(context, err)</code> en el <code>catch</code> y llaman <code>refreshFolderPages()</code> al escribir. Las seis de <code>renameFolder</code> a <code>moveDocumentToFolder</code> existen pero ningún componente las usa hoy: la UI hace todo con <code>updateFolder</code>/<code>updateDocument</code>.</small></td></tr>
   </tbody>
 </table>
 </div>
+<p><code>FolderActionResult = { ok: true } | { ok: false, code, message }</code>. Tipos exportados para la UI: <code>EditTarget = { kind: 'folder' | 'document', id }</code>, <code>FolderDestination = { id: string | null, label }</code>, <code>EditOptionsResult</code>.</p>
 <p><code>areas.actions.ts</code> centraliza el <code>catch</code> en <code>toActionError(action, err)</code>, que no se exporta porque un archivo <code>'use server'</code> solo puede exportar funciones <code>async</code>.</p>
 
 <h3>Documents <span class="tag t-service">service</span></h3>
@@ -383,6 +559,42 @@ Supabase (Postgres + RLS)  /  Cloudflare R2</code></pre>
 <div class="fn">
   <div class="sig">fetchAllAreas(): Promise&lt;Area[]&gt;</div>
   <div class="body">Ordenadas por nombre A→Z. Un usuario sin permiso recibe <code>[]</code>, no un error. <code>42501</code> → 403 · otro → <code>FetchFailed</code> 500.</div>
+</div>
+
+<h3>Folders <span class="tag t-service">service</span></h3>
+<p>Contrato: <code>src/lib/core/folders/provider/folders.provider.ts</code> · Implementación: <code>src/lib/core/folders/service/folders.service.ts</code> · Instancia: <code>foldersProvider</code></p>
+<p>Tipos: <code>Folder</code> (<code>id, folder_name, parent_id, tags</code>), <code>FolderDocument</code> (<code>id, name, description, file_type, file_size, uploaded_at, folder_id, tags</code>), <code>FolderPathItem</code> (<code>id, folder_name</code>), <code>FolderSummary</code> (<code>id, folder_name, parent_id</code>, sin tags), <code>FolderElements = { path, folders, documents }</code>, <code>UpdateFolderInput = { folderName, parentId, areaIds }</code>.</p>
+<p>Igual que en áreas, <code>insufficientPrivilege(action, message)</code> convierte cualquier <code>42501</code> en <code>AccessError</code> 403.</p>
+
+<div class="fn">
+  <div class="sig">getFolderElements(folderId: string | null): Promise&lt;FolderElements&gt;</div>
+  <div class="body">RPC <code>get_folder_documents</code>. Carpeta inexistente → listas vacías (la página lo convierte en 404). <code>42501</code> → 403 · otro o respuesta vacía → <code>FetchFailed</code> 500.</div>
+</div>
+<div class="fn">
+  <div class="sig">createFolder(folderName: string, parentId: string | null): Promise&lt;void&gt;</div>
+  <div class="body"><code>INSERT</code> en <code>folders</code>. <code>23505</code> → <code>CreateFailed</code> 409 · <code>23503</code> → <code>CreateFailed</code> 404 · otro → 500.</div>
+</div>
+<div class="fn">
+  <div class="sig">updateFolder(folderId: string, input: UpdateFolderInput): Promise&lt;void&gt;</div>
+  <div class="body">RPC <code>update_folder</code>. Códigos: ver la tabla del flujo 2.6.</div>
+</div>
+<div class="fn">
+  <div class="sig">listAllFolders(): Promise&lt;FolderSummary[]&gt; · getFolderAreaIds(folderId): Promise&lt;string[]&gt;</div>
+  <div class="body">Lecturas directas de <code>folders</code> (ordenadas por <code>folder_name</code>) y de <code>folder_areas</code>. Solo las usa <code>getEditOptions</code>. Error → <code>FetchFailed</code> 500.</div>
+</div>
+<div class="fn">
+  <div class="sig">renameFolder · moveFolder · deleteFolder · assignAreaToFolder · removeAreaFromFolder</div>
+  <div class="body">Operaciones sueltas sobre <code>folders</code>/<code>folder_areas</code> (UPDATE/DELETE con <code>.select('id')</code>, 0 filas = no existe o RLS la filtró). <code>moveFolder</code> traduce <code>23514</code> (ciclo); <code>deleteFolder</code> traduce <code>23503</code> (tiene subcarpetas o documentos, <code>ON DELETE RESTRICT</code>); <code>assignAreaToFolder</code> trata <code>23505</code> como éxito. Sin uso en la UI actual.</div>
+</div>
+
+<h4>Agregados a Documents <span class="tag t-service">service</span> para carpetas</h4>
+<div class="fn">
+  <div class="sig">updateDocument(documentId, input: UpdateDocumentInput): Promise&lt;void&gt;</div>
+  <div class="body">RPC <code>update_document</code>. <code>UpdateDocumentInput = { name, folderId, areaIds }</code>. <code>42501</code> → 403 · <code>P0002</code> → <code>DocumentError.UpdateFailed</code> 404 · <code>23503</code> → <code>UpdateFailed</code> · otro → 500.</div>
+</div>
+<div class="fn">
+  <div class="sig">getDocumentAreaIds(documentId): Promise&lt;string[]&gt; · moveDocumentToFolder(documentId, folderId)</div>
+  <div class="body">Áreas propias del documento (<code>document_areas</code>), y el <code>UPDATE folder_id</code> suelto (solo si <code>deleted_at IS NULL</code>; sin uso en la UI).</div>
 </div>
 
 <h3>Storage <span class="tag t-service">service</span></h3>
@@ -457,6 +669,28 @@ Supabase (Postgres + RLS)  /  Cloudflare R2</code></pre>
 <h4><code>document_areas</code> (relación N:M)</h4>
 <p><code>document_id → documents(id) ON DELETE CASCADE</code>, <code>area_id → areas(id) ON DELETE CASCADE</code>, PK <code>(document_id, area_id)</code>.</p>
 
+<h4><code>folders</code></h4>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Columna / regla</th><th>Tipo</th><th>Uso</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID PK</td><td><code>DEFAULT gen_random_uuid()</code></td></tr>
+    <tr><td><code>parent_id</code></td><td>UUID → folders(id) <code>ON DELETE RESTRICT</code></td><td>Carpeta padre; <code>NULL</code> = raíz. No se puede borrar una carpeta con hijas.</td></tr>
+    <tr><td><code>folder_name</code></td><td>TEXT NOT NULL</td><td>Nombre visible.</td></tr>
+    <tr><td><code>created_by</code></td><td>UUID → auth.users</td><td><code>DEFAULT auth.uid()</code></td></tr>
+    <tr><td><code>UNIQUE NULLS NOT DISTINCT (parent_id, folder_name)</code></td><td>—</td><td>No hay dos carpetas con el mismo nombre en el mismo padre (incluida la raíz). Su índice también sirve para listar hijas por padre.</td></tr>
+    <tr><td><code>folders_no_self_parent</code></td><td>CHECK</td><td><code>parent_id &lt;&gt; id</code>.</td></tr>
+    <tr><td><code>folders_prevent_cycle</code></td><td>TRIGGER (BEFORE UPDATE OF parent_id)</td><td>Recorre los ancestros del nuevo padre; si aparece la carpeta que se mueve, <code>23514</code>. Toma <code>pg_advisory_xact_lock</code> para que dos movimientos cruzados no pasen a la vez.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4><code>folder_areas</code> (relación N:M)</h4>
+<p><code>folder_id → folders(id) ON DELETE CASCADE</code>, <code>area_id → areas(id) ON DELETE CASCADE</code>, PK <code>(folder_id, area_id)</code>. Solo guarda áreas propias; las heredadas se calculan.</p>
+
+<h4><code>documents.folder_id</code></h4>
+<p><code>REFERENCES folders(id) ON DELETE RESTRICT</code>, índice <code>documents_folder_id_idx</code>. <code>NULL</code> = el documento está en la raíz. El soft delete (<code>soft_delete_document</code>) lo pone en <code>NULL</code>; al recuperarlo vuelve a la raíz.</p>
+
 <h4><code>profiles.area_id</code></h4>
 <p>Cada usuario pertenece a una sola área. <code>REFERENCES areas(id) ON DELETE SET NULL</code>.</p>
 
@@ -474,6 +708,8 @@ Supabase (Postgres + RLS)  /  Cloudflare R2</code></pre>
     <tr><td><code>documents</code></td><td>authenticated</td><td><code>is_admin()</code></td><td><code>is_admin()</code></td><td><code>is_admin()</code></td></tr>
     <tr><td><code>areas</code></td><td><code>is_admin()</code></td><td><code>is_admin()</code></td><td><code>is_admin()</code></td><td><code>is_admin()</code></td></tr>
     <tr><td><code>document_areas</code></td><td>authenticated</td><td><code>is_admin()</code></td><td><code>is_admin()</code></td><td><code>is_admin()</code></td></tr>
+    <tr><td><code>folders</code></td><td>authenticated</td><td><code>is_admin()</code></td><td><code>is_admin()</code></td><td><code>is_admin()</code></td></tr>
+    <tr><td><code>folder_areas</code></td><td>authenticated</td><td><code>is_admin()</code></td><td><code>is_admin()</code></td><td><code>is_admin()</code></td></tr>
   </tbody>
 </table>
 </div>
@@ -482,10 +718,14 @@ Supabase (Postgres + RLS)  /  Cloudflare R2</code></pre>
 <ul>
   <li><code>public.is_admin()</code> — <code>true</code> si el <code>profiles.role</code> de <code>auth.uid()</code> es <code>admin</code> o <code>superadmin</code>. <code>SECURITY DEFINER</code>; ejecutable solo por <code>authenticated</code>.</li>
   <li><code>public.has_full_document_access()</code> — hoy devuelve <code>is_admin()</code>. La usa <code>createPendingDocument</code> como chequeo previo; existe para poder cambiar la regla de subida sin tocar el código.</li>
+  <li><code>public.can_access_documents()</code> — quién puede leer carpetas y documentos. Hoy: <code>auth.uid() IS NOT NULL</code>. Es el único lugar a cambiar cuando la lectura se restrinja por área.</li>
+  <li><code>public.get_folder_documents(p_folder_id uuid) → jsonb</code> — contenido directo de una carpeta con <code>path</code> y <code>tags</code> (flujo 2.4). SECURITY INVOKER.</li>
+  <li><code>public.update_folder(p_folder_id, p_folder_name, p_parent_id, p_area_ids uuid[])</code> y <code>public.update_document(p_document_id, p_name, p_folder_id, p_area_ids uuid[])</code> — "Editar" en una transacción (flujo 2.6). SECURITY INVOKER con <code>is_admin()</code> explícito.</li>
+  <li><code>public.prevent_folder_cycle()</code> — función del trigger <code>folders_prevent_cycle</code>.</li>
 </ul>
 
 <h3>Migraciones relevantes</h3>
-<p>En <code>supabase/migrations/</code>: <code>…_area_table_creation.sql</code>, <code>…_create_documents_table.sql</code>, <code>…_create_document_area_table.sql</code>, <code>…_can_upload_document_rpc.sql</code>, <code>20261119120000_profiles_area_fk.sql</code>, <code>20261119130000_areas_created_by_default.sql</code>.</p>
+<p>En <code>supabase/migrations/</code>: <code>…_area_table_creation.sql</code>, <code>…_create_documents_table.sql</code>, <code>…_create_document_area_table.sql</code>, <code>…_can_upload_document_rpc.sql</code>, <code>20261119120000_profiles_area_fk.sql</code>, <code>20261119130000_areas_created_by_default.sql</code>, <code>20261120174500_create_folder_table.sql</code>, <code>20261120185333_soft_delete_folder_null.sql</code>, <code>20261124120000_get_folder_documents_rpc.sql</code>, <code>20261126150000_update_folder_and_document_rpc.sql</code>.</p>
 <p>Tras cambiar una migración o agregar una: <code>npx supabase db reset</code> y <code>npx supabase gen types typescript --local &gt; src/lib/core/database.types.ts</code>.</p>
 
 <!-- ═══════════════════════════════════════════ -->
@@ -506,7 +746,8 @@ Supabase (Postgres + RLS)  /  Cloudflare R2</code></pre>
   <tbody>
     <tr><td><code>AuthError</code></td><td><code>errors/auth.ts</code></td><td><code>AuthenticationFailure</code> (sin sesión)</td></tr>
     <tr><td><code>AccessError</code></td><td><code>errors/access.ts</code></td><td><code>AuthorizationFailure</code> (sin permiso), <code>RoleCheckFailed</code> (falló la consulta de rol)</td></tr>
-    <tr><td><code>DocumentError</code></td><td><code>errors/documents.ts</code></td><td><code>CreateFailed</code>, <code>ConfirmFailed</code>, <code>UploadNotPending</code>, <code>AssignAreaFailed</code></td></tr>
+    <tr><td><code>DocumentError</code></td><td><code>errors/documents.ts</code></td><td><code>CreateFailed</code>, <code>ConfirmFailed</code>, <code>UploadNotPending</code>, <code>AssignAreaFailed</code>, <code>UpdateFailed</code></td></tr>
+    <tr><td><code>FolderError</code></td><td><code>errors/folders.ts</code></td><td><code>CreateFailed</code>, <code>RenameFailed</code>, <code>MoveFailed</code>, <code>DeleteFailed</code>, <code>FetchFailed</code>, <code>AssignAreaFailed</code>, <code>RemoveAreaFailed</code>, <code>UpdateFailed</code></td></tr>
     <tr><td><code>AreaError</code></td><td><code>errors/areas.ts</code></td><td><code>CreateFailed</code>, <code>UpdateFailed</code>, <code>DeleteFailed</code>, <code>FetchFailed</code>, <code>AssignUserFailed</code> (aún sin uso)</td></tr>
     <tr><td><code>StorageError</code></td><td><code>errors/storage.ts</code></td><td><code>UploadUrlFailed</code>, <code>DownloadUrlFailed</code></td></tr>
   </tbody>
@@ -531,7 +772,9 @@ componente: setError(result.message); status = "error"</code></pre>
   <tbody>
     <tr><td><code>42501</code></td><td>insufficient_privilege</td><td>RLS rechaza un <strong>INSERT</strong>, o falta un <code>GRANT</code> en la tabla.</td></tr>
     <tr><td><code>23505</code></td><td>unique_violation</td><td>Nombre de área repetido; <code>id</code> de documento repetido; pareja documento-área repetida.</td></tr>
-    <tr><td><code>23503</code></td><td>foreign_key_violation</td><td>Asignar un área o documento que no existe.</td></tr>
+    <tr><td><code>23503</code></td><td>foreign_key_violation</td><td>Asignar un área o documento que no existe; carpeta destino inexistente; borrar una carpeta con hijas o documentos.</td></tr>
+    <tr><td><code>23514</code></td><td>check_violation</td><td>Mover una carpeta dentro de sí misma o de una subcarpeta (trigger y CHECK de <code>folders</code>).</td></tr>
+    <tr><td><code>P0002</code></td><td>no_data_found</td><td>Lo lanzan <code>update_folder</code>/<code>update_document</code> cuando el elemento no existe.</td></tr>
   </tbody>
 </table>
 </div>
@@ -578,6 +821,18 @@ componente: setError(result.message); status = "error"</code></pre>
 
   <dt>Cambiar quién puede subir documentos</dt>
   <dd>Cambiar la RPC <code>has_full_document_access</code> <em>y</em> la política <code>documents_insert</code>. Hoy el service consulta la RPC y RLS vuelve a validar en el insert; si solo se cambia una, la otra seguirá bloqueando.</dd>
+
+  <dt>Agregar un campo al diálogo "Editar"</dt>
+  <dd>(1) Parámetro nuevo en <code>update_folder</code>/<code>update_document</code> (migración nueva con <code>CREATE OR REPLACE</code>; si cambia la firma, borrar la anterior). (2) Campo en <code>UpdateFolderInput</code>/<code>UpdateDocumentInput</code> y en el <code>rpc()</code> del service. (3) Si necesita datos para precargarse, agregarlos a <code>getEditOptions</code>. (4) Estado + <code>DmsDialogField</code> en <code>EditItemButton</code>.</dd>
+
+  <dt>Borrar carpetas desde la UI</dt>
+  <dd>La action <code>deleteFolder</code> ya existe. Falta un botón (por ejemplo, otro <code>DmsDialog</code> de confirmación). La base rechaza carpetas con contenido (<code>23503</code>).</dd>
+
+  <dt>Restringir la lectura por área</dt>
+  <dd>Cambiar <code>can_access_documents()</code> y las políticas SELECT de <code>folders</code>/<code>documents</code>; la herencia ya se calcula en <code>get_folder_documents</code>. Ver el TODO de ADR-011.</dd>
+
+  <dt>Un formulario nuevo en diálogo</dt>
+  <dd>Usar <code>DmsDialog</code> con <code>children</code>, <code>DmsDialogField</code> por campo y <code>DMS_DIALOG_CONTROL</code> en inputs/selects. El componente que lo usa controla <code>open</code> y el estado del formulario.</dd>
 </dl>
 
 <!-- ═══════════════════════════════════════════ -->
@@ -593,6 +848,12 @@ componente: setError(result.message); status = "error"</code></pre>
     <tr><td><code>fetchAllAreas</code> se llama al montar <code>AdminPanel</code> y después de cada cambio.</td><td>Cambios hechos por otro admin no se ven hasta que pase uno de esos dos eventos.</td></tr>
     <tr><td><code>areas.name</code> es único exacto.</td><td>"Marketing" y "marketing" pueden coexistir.</td></tr>
     <tr><td>El comentario de <code>areas_select</code> en la migración dice "cualquier usuario autenticado".</td><td>La política real es <code>is_admin()</code>; el comentario está desactualizado.</td></tr>
+    <tr><td>Los tags heredados no aparecen marcados en el diálogo "Editar".</td><td>Solo se editan las áreas propias. Para quitar un tag heredado hay que editar la carpeta ancestro que lo aporta.</td></tr>
+    <tr><td><code>getEditOptions</code> trae todas las carpetas cada vez que se abre "Editar".</td><td>Con muchas carpetas el diálogo tardará más en cargar. No hay caché ni paginación.</td></tr>
+    <tr><td><code>refreshFolderPages()</code> solo limpia el Router Cache de quien hizo el cambio.</td><td>Otros usuarios pueden ver la versión anterior de una carpeta hasta 120 s.</td></tr>
+    <tr><td>Un documento eliminado (soft delete) pierde su carpeta.</td><td>Al recuperarlo queda en la raíz; hay que moverlo con "Editar".</td></tr>
+    <tr><td>La lectura de carpetas y documentos no se filtra por área.</td><td>Todo usuario con sesión ve todo el árbol (<code>can_access_documents()</code>).</td></tr>
+    <tr><td>Los colores <code>soma-cream</code>, <code>soma-line</code>, etc. viven en <code>@theme</code> de <code>globals.css</code>.</td><td>Si se agrega un token y el dev server no reconstruye el CSS, las clases no existen y el diálogo se ve transparente. Reiniciar <code>npm run dev</code> (o borrar <code>.next</code>).</td></tr>
     <tr><td><code>supabase/seed.sql</code> tiene <code>&lt;LOCAL_SECRET_KEY&gt;</code> en lugar de la key local.</td><td>En local, el cron no se autentica hasta que se reemplaza por el valor de <code>npx supabase status</code> (sin hacer commit de ese cambio).</td></tr>
   </tbody>
 </table>
@@ -603,6 +864,18 @@ componente: setError(result.message); status = "error"</code></pre>
 <dl>
   <dt>Área</dt>
   <dd>Grupo de la empresa. Un documento puede tener varias (<code>document_areas</code>); un usuario tiene una (<code>profiles.area_id</code>).</dd>
+
+  <dt>Raíz ("Documentos")</dt>
+  <dd>Nivel superior del árbol. No es una fila: son las carpetas con <code>parent_id IS NULL</code> y los documentos con <code>folder_id IS NULL</code>. URL <code>/DMS/documents</code>.</dd>
+
+  <dt>Área propia / área heredada</dt>
+  <dd>Propia: asignada directamente a la carpeta o documento (<code>folder_areas</code>, <code>document_areas</code>). Heredada: propia de alguna carpeta ancestro; se calcula al consultar.</dd>
+
+  <dt>Tags</dt>
+  <dd>En la UI, los nombres de las áreas (propias ∪ heredadas) que se muestran como badges.</dd>
+
+  <dt>Router Cache</dt>
+  <dd>Caché del navegador de Next para páginas ya visitadas. Su duración la fija <code>staleTimes</code>; <code>revalidatePath</code> lo limpia.</dd>
 
   <dt>Fila pendiente</dt>
   <dd>Fila de <code>documents</code> con <code>uploaded_at IS NULL</code>: el documento está reservado pero su archivo no se ha confirmado.</dd>
@@ -633,7 +906,7 @@ componente: setError(result.message); status = "error"</code></pre>
 </dl>
 
 <footer>
-  Referencia de <code>docs/</code>. Las decisiones de arquitectura de fondo están en <code>docs/decisions/</code> (en particular ADR-005, ADR-008 y ADR-010).
+  Referencia de <code>docs/</code>. Las decisiones de arquitectura de fondo están en <code>docs/decisions/</code> (en particular ADR-005, ADR-008, ADR-010 y ADR-011). La gestión de usuarios está en <a href="./funcionamiento-gestion-de-usuarios.html">funcionamiento-gestion-de-usuarios.html</a>.
 </footer>
 
 </main>

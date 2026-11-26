@@ -1,40 +1,40 @@
-"use client";
-
-import { AdminPanel } from "@/components/DMS/AdminPanel";
-import { DashboardHeader } from "@/components/DMS/DashboardHeader";
-import type { DocumentSummary } from "@/components/DMS/DocumentRow";
-import { DocumentSearch } from "@/components/DMS/DocumentSearch";
-import { RecentDocuments } from "@/components/DMS/RecentDocuments";
-import { isAdminRole } from "@/lib/core/auth/roles";
-import { useUser } from "@/lib/core/context/userContext";
-
-// Datos de ejemplo: se eliminan cuando exista la tabla de documentos.
-const EXAMPLE_DOCUMENTS: DocumentSummary[] = [
-    { id: "1", name: "Brand Book v3.0", tags: ["Marca"], updatedAt: "12 oct 2026" },
-    { id: "2", name: "Manual HACCP", tags: ["Calidad"], updatedAt: "3 oct 2026" },
-    { id: "3", name: "Ficha técnica de producto", tags: ["Producción"], updatedAt: "28 sep 2026" },
-];
+import { DmsHome } from "@/components/DMS/DmsHome";
+import { FolderContents } from "@/components/DMS/FolderContents";
+import { getRecentDocumentIds } from "@/lib/core/documents/recentDocuments";
+import { documentsProvider } from "@/lib/core/documents/service/documents.service";
+import type { FolderDocument } from "@/lib/core/folders/provider/folders.provider";
+import { handleError } from "@/lib/errors/handleError";
 
 /**
- * Página inicial del DMS. No redirige cuando `user` es `null`: justo después
- * del login el perfil todavía viene en camino, y proteger la ruta le toca al
- * proxy, que lee la sesión en el servidor.
+ * Página inicial del DMS. Server Component: lee de la cookie los ids de los
+ * documentos abiertos recientemente, consulta sus datos actuales y se los pasa
+ * a `DmsHome` (cliente), que arma la página con el usuario de `useUser()`.
+ * También arma el contenido de la raíz (`FolderContents` sin encabezado),
+ * que `DmsHome` muestra solo a usuarios no admin.
+ * Si la consulta falla, la página se muestra igual con el mensaje de error
+ * en la sección de recientes.
  *
- * @returns la página inicial, o un estado neutro mientras no hay usuario
+ * @returns la página inicial
+ * @example
+ * // Next la renderiza en /DMS
  */
-export default function DmsHomePage() {
-    const { user } = useUser();
+export default async function DmsHomePage() {
+    let recentDocuments: FolderDocument[] = [];
+    let recentError: string | null = null;
 
-    if (!user) {
-        return <p className="px-4 py-10 text-center text-sm text-soma-brown/70">Cargando...</p>;
+    try {
+        const recentIds = await getRecentDocumentIds();
+        recentDocuments = await documentsProvider.getDocumentsByIds(recentIds);
+    } catch (err) {
+        recentError = handleError("DmsHomePage", err).message;
     }
 
     return (
-        <div className="mx-auto w-full max-w-5xl space-y-8 px-4 py-6 md:px-8 md:py-10">
-            <DashboardHeader name={user.name} role={user.role} />
-            <DocumentSearch />
-            <RecentDocuments documents={EXAMPLE_DOCUMENTS} />
-            {isAdminRole(user.role) && <AdminPanel />}
-        </div>
+        <DmsHome
+            recentDocuments={recentDocuments}
+            recentError={recentError}
+            // Misma vista que /DMS/documents, sin el encabezado "Documentos".
+            rootFolder={<FolderContents folderId={null} hideHeader />}
+        />
     );
 }

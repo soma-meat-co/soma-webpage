@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOMA DMS — Gestión de usuarios</title>
+<style>
+  :root {
+    --red: #AC1F25;
+    --brown: #3C2415;
+    --off: #F5F1EC;
+    --gray: #6b6d70;
+    --line: #DAD6CE;
+    --white: #ffffff;
+    --head: #efe9e1;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--off);
+    color: var(--brown);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 920px; margin: 0 auto; padding: 40px 20px 80px; }
+  header { border-bottom: 3px solid var(--red); padding-bottom: 16px; margin-bottom: 28px; }
+  header p { margin: 4px 0; color: var(--gray); }
+  h1 { font-size: 28px; margin: 0 0 8px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; }
+  h3 { font-size: 17px; margin: 28px 0 8px; }
+  h4 { font-size: 15px; margin: 18px 0 6px; }
+  p, li { max-width: 78ch; }
+  a { color: var(--red); }
+  code {
+    font: 13px/1.4 ui-monospace, Consolas, monospace;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 5px;
+    word-break: break-word;
+  }
+  pre {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font: 13px/1.5 ui-monospace, Consolas, monospace;
+  }
+  pre code { border: 0; padding: 0; background: none; }
+  nav {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px 20px;
+  }
+  nav ol { margin: 0; padding-left: 20px; }
+  nav ol ol { padding-left: 18px; }
+  .card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 14px 0;
+  }
+  .warn { border-left: 4px solid var(--red); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; background: var(--white); border: 1px solid var(--line); margin: 12px 0; font-size: 14.5px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--head); }
+  .fn {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    margin: 12px 0;
+    overflow: hidden;
+  }
+  .fn > .sig {
+    background: var(--head);
+    padding: 8px 14px;
+    font: 13.5px/1.5 ui-monospace, Consolas, monospace;
+    word-break: break-word;
+  }
+  .fn > .body { padding: 6px 14px 10px; }
+  .fn ul { margin: 4px 0; padding-left: 20px; }
+  .tag { display: inline-block; font: 600 11px/1 system-ui, sans-serif; text-transform: uppercase; letter-spacing: .04em; padding: 3px 7px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+  .t-client { background: #e3ecf7; color: #234a7a; }
+  .t-action { background: #f5dcdd; color: var(--red); }
+  .t-service { background: #e4efe3; color: #2f5a2b; }
+  .t-db { background: #efe5d6; color: #6a4a1c; }
+  .t-edge { background: #ece3f5; color: #5a2f7a; }
+  .flow { list-style: none; padding: 0; counter-reset: s; }
+  .flow > li {
+    counter-increment: s;
+    position: relative;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 14px 10px 52px;
+    margin: 8px 0;
+  }
+  .flow > li::before {
+    content: counter(s);
+    position: absolute; left: 14px; top: 10px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--red); color: var(--white);
+    font-weight: 700; text-align: center; line-height: 26px; font-size: 14px;
+  }
+  .flow small { color: var(--gray); }
+  dl dt { font-weight: 700; margin-top: 12px; }
+  dl dd { margin: 2px 0 0 0; }
+  footer { margin-top: 56px; color: var(--gray); font-size: 14px; border-top: 1px solid var(--line); padding-top: 16px; }
+  @media (max-width: 600px) { h1 { font-size: 24px; } }
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <h1>Gestión de usuarios — cómo funciona</h1>
+  <p>Referencia técnica del estado actual del código: flujos, funciones, archivos, base de datos y errores.</p>
+  <p>Alcance: <code>/DMS/admin/user-management</code> e <code>/DMS/admin/invite-user</code>: listar, invitar, editar (nombre y área) y eliminar usuarios.</p>
+</header>
+
+<nav>
+  <strong>Contenido</strong>
+  <ol>
+    <li><a href="#capas">Arquitectura y archivos</a></li>
+    <li><a href="#flujos">Flujos</a>
+      <ol>
+        <li><a href="#flujo-acceso">Acceso a las rutas de admin</a></li>
+        <li><a href="#flujo-listar">Listar usuarios</a></li>
+        <li><a href="#flujo-invitar">Invitar un usuario</a></li>
+        <li><a href="#flujo-activar">Activación de la cuenta</a></li>
+        <li><a href="#flujo-editar">Editar nombre y área</a></li>
+        <li><a href="#flujo-eliminar">Eliminar un usuario</a></li>
+      </ol>
+    </li>
+    <li><a href="#funciones">Referencia de funciones por archivo</a></li>
+    <li><a href="#db">Base de datos</a></li>
+    <li><a href="#errores">Manejo de errores</a></li>
+    <li><a href="#extender">Cómo extender</a></li>
+    <li><a href="#limites">Comportamientos no obvios y límites actuales</a></li>
+    <li><a href="#glosario">Glosario</a></li>
+  </ol>
+</nav>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="capas">1. Arquitectura y archivos</h2>
+
+<p>Usa las mismas capas que el resto del DMS (ver <a href="./funcionamiento-documentos-y-areas.html#capas">Documentos y áreas §1</a>), con dos caminos hacia la base según la operación:</p>
+
+<pre><code>Página / componente                 src/app/DMS/admin/**, src/components/DMS/*
+   │
+   ▼
+Server Action ('use server')        userManagement.actions.ts, inviteUser.actions.ts
+   │                                (la página de lista llama al provider directo: es Server Component)
+   ▼
+adminProvider ← SupabaseAdminService   src/lib/core/admin/{provider,service}/admin.*.ts
+   │                                  │
+   │ supabase.rpc(...)                │ supabase.functions.invoke(...)
+   ▼                                  ▼
+RPC SECURITY DEFINER               Edge Function invite-user-as-admin
+(get_all_users, edit_user_data,     (usa la secret key; solo vive en Supabase)
+ remove_user)                         │
+   │                                  ▼
+   ▼                               Supabase Auth (inviteUserByEmail)
+profiles / auth.users / areas</code></pre>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Operación</th><th>Camino</th><th>Por qué</th></tr></thead>
+  <tbody>
+    <tr><td>Invitar</td><td>Edge Function</td><td>Necesita <code>auth.admin.inviteUserByEmail</code>, que requiere la secret key. Next nunca la tiene (ADR-007).</td></tr>
+    <tr><td>Listar, editar, eliminar</td><td>RPC <code>SECURITY DEFINER</code></td><td>Solo necesitan SQL. Corren con permisos del dueño de la función para leer <code>auth.users</code> y escribir perfiles ajenos, y validan <code>is_admin()</code> primero.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Archivos</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Archivo</th><th>Contenido</th></tr></thead>
+  <tbody>
+    <tr><td><code>src/proxy.ts</code></td><td>Exige sesión en <code>/DMS/**</code> y rol admin en <code>/DMS/admin/**</code>.</td></tr>
+    <tr><td><code>src/app/DMS/admin/user-management/page.tsx</code></td><td>Página de lista (Server Component).</td></tr>
+    <tr><td><code>src/app/DMS/admin/user-management/userManagement.actions.ts</code></td><td>Actions <code>editUserData</code> y <code>removeUser</code>.</td></tr>
+    <tr><td><code>src/app/DMS/admin/invite-user/page.tsx</code></td><td>Formulario de invitación (cliente).</td></tr>
+    <tr><td><code>src/app/DMS/admin/invite-user/inviteUser.actions.ts</code></td><td>Action <code>inviteUserAction</code>.</td></tr>
+    <tr><td><code>src/components/DMS/UserList.tsx</code>, <code>UserRow.tsx</code></td><td>Lista y fila de usuario.</td></tr>
+    <tr><td><code>src/components/DMS/EditUserButton.tsx</code>, <code>RemoveUserButton.tsx</code></td><td>Botones con su <code>DmsDialog</code>.</td></tr>
+    <tr><td><code>src/components/DMS/UserSearch.tsx</code></td><td>Búsqueda y filtro: solo visuales, sin funcionalidad.</td></tr>
+    <tr><td><code>src/lib/core/admin/provider/admin.provider.ts</code></td><td>Interfaz <code>AdminProvider</code> y tipos.</td></tr>
+    <tr><td><code>src/lib/core/admin/service/admin.service.ts</code></td><td><code>SupabaseAdminService</code>, instancia <code>adminProvider</code>.</td></tr>
+    <tr><td><code>src/lib/errors/admin.ts</code></td><td><code>AdminError</code> y <code>AdminErrorCode</code>.</td></tr>
+    <tr><td><code>supabase/functions/invite-user-as-admin/index.ts</code></td><td>Edge Function de invitación.</td></tr>
+    <tr><td><code>supabase/migrations/20261126160000_user_management_rpc.sql</code></td><td>RPCs <code>get_all_users</code>, <code>edit_user_data</code>, <code>remove_user</code>.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="flujos">2. Flujos</h2>
+
+<h3 id="flujo-acceso">2.1 Acceso a las rutas de admin</h3>
+<ol class="flow">
+  <li><code>proxy(request)</code> corre antes de cada página de <code>/DMS/**</code> (<code>matcher: "/DMS/:path*"</code>).</li>
+  <li>Sin sesión → redirige a <code>/DMS/login</code> (salvo login, reset-password y set-password).</li>
+  <li>En <code>/DMS/admin</code> o <code>/DMS/admin/**</code>: <code>session.getRole()</code>; si no es <code>admin</code>/<code>superadmin</code> (<code>isAdminRole</code>) → redirige a <code>/DMS</code>.</li>
+</ol>
+<p>Se llega a la lista desde el botón "Usuarios" de <code>AdminPanel</code> en <code>/DMS</code>. El proxy solo controla navegación: cada RPC y la Edge Function vuelven a validar <code>is_admin()</code> en Supabase.</p>
+
+<h3 id="flujo-listar">2.2 Listar usuarios</h3>
+<ol class="flow">
+  <li><span class="tag t-client">servidor</span> <code>UserManagementPage</code> (async Server Component) llama en paralelo:
+    <pre><code>Promise.all([adminProvider.getAllUsers(), areasProvider.fetchAllAreas()])</code></pre>
+    Las áreas se cargan aquí (no al abrir el diálogo) para el selector de "Editar".</li>
+  <li><span class="tag t-service">service</span> <code>getAllUsers()</code> → <code>supabase.rpc('get_all_users')</code> y convierte cada fila (snake_case) a <code>ManagedUser</code> (camelCase).</li>
+  <li><span class="tag t-db">db</span> <code>get_all_users()</code>: <code>is_admin()</code> o <code>42501</code>; luego
+    <pre><code>profiles p JOIN auth.users u ON u.id = p.id LEFT JOIN areas a ON a.id = p.area_id
+ORDER BY p.nombre, p.apellido_paterno, u.email</code></pre>
+    Devuelve <strong>todos</strong> los usuarios (hay un <code>TODO:</code> de paginación en la RPC, el service y la página).</li>
+  <li><span class="tag t-client">render</span> Si algo falla, <code>handleError("UserManagementPage", err)</code> y se muestra el mensaje en lugar de la lista. Si no, <code>UserList users areas</code> → un <code>UserRow</code> por usuario.</li>
+  <li><span class="tag t-client">render</span> <code>UserRow</code>: nombre completo (o el correo si no tiene nombre), badge de rol, badge de área (<code>"Sin área"</code> si <code>areaName</code> es <code>null</code>), correo, y los botones <code>EditUserButton</code> y <code>RemoveUserButton</code>.</li>
+</ol>
+
+<h3 id="flujo-invitar">2.3 Invitar un usuario</h3>
+<p>Punto de entrada: "Agregar usuario" en la lista → <code>/DMS/admin/invite-user</code>.</p>
+<ol class="flow">
+  <li><span class="tag t-client">cliente</span> <code>InviteUserPage</code>: formulario con nombre, apellido paterno, apellido materno (opcional) y correo. Al enviar llama la action con <code>loading</code>; muestra <code>result.message</code> en error o la confirmación con el correo.</li>
+  <li><span class="tag t-action">action</span> <code>inviteUserAction(input)</code> <small>inviteUser.actions.ts</small>: no valida permisos; atrapa cualquier error y devuelve <code>{ ok: false, code, message }</code>.</li>
+  <li><span class="tag t-service">service</span> <code>adminProvider.inviteNewUser(input)</code> → <code>supabase.functions.invoke('invite-user-as-admin', { body })</code> con el cliente de sesión (manda el JWT del admin). Si hay error, <code>toAppError()</code> lo traduce por el <code>code</code> del body.</li>
+  <li>
+    <span class="tag t-edge">edge</span> <code>invite-user-as-admin</code>:
+    <ul>
+      <li><code>withSupabase({ auth: "user" })</code> valida el JWT.</li>
+      <li><code>ctx.supabase.rpc("is_admin")</code> con el cliente del usuario; si no es <code>true</code> → 403 <code>forbidden</code>.</li>
+      <li><code>parseBody</code>: correo con <code>@</code>, nombre y apellido paterno no vacíos; normaliza (trim, correo en minúsculas).</li>
+      <li>El correo debe terminar en <code>@somameat.com</code> → si no, 422 <code>email_not_institutional</code>.</li>
+      <li><code>supabaseAdmin.auth.admin.inviteUserByEmail(email, { data: { nombre, apellidos }, redirectTo: INVITE_REDIRECT_URL })</code>.</li>
+      <li>Registra <code>profiles.created_by</code> = id del admin (si falla, solo lo registra en logs).</li>
+      <li>Responde 201 <code>{ id, email }</code>.</li>
+    </ul>
+  </li>
+  <li><span class="tag t-db">db</span> El INSERT en <code>auth.users</code> dispara <code>on_auth_user_created</code> → <code>handle_new_user()</code> crea el perfil con los nombres de <code>raw_user_meta_data</code>, <code>role = 'user'</code> y <code>area_id = NULL</code>.</li>
+</ol>
+<p><strong>El usuario nuevo queda sin área.</strong> El área se asigna después con "Editar" (flujo 2.5). El rol nunca se recibe del body: esta función no puede crear admins.</p>
+
+<h3 id="flujo-activar">2.4 Activación de la cuenta</h3>
+<ul>
+  <li>El correo de invitación lleva a <code>INVITE_REDIRECT_URL</code> (<code>/DMS/set-password</code>), donde el usuario crea su contraseña.</li>
+  <li>Al pasar <code>auth.users.encrypted_password</code> de vacío a no vacío, el trigger <code>on_auth_user_activated</code> pone <code>profiles.activated_at = now()</code>.</li>
+  <li><code>activated_at = NULL</code> significa invitación pendiente. <code>get_all_users</code> lo devuelve (<code>ManagedUser.activatedAt</code>), aunque la UI todavía no lo muestra.</li>
+</ul>
+
+<h3 id="flujo-editar">2.5 Editar nombre y área</h3>
+<p>Punto de entrada: "Editar" en cada <code>UserRow</code> → <code>EditUserButton</code>.</p>
+<ol class="flow">
+  <li><span class="tag t-client">cliente</span> <code>handleOpenChange(true)</code> carga en el estado los valores actuales del usuario (de la prop <code>user</code>, sin pedir nada al servidor). Campos en <code>DmsDialog</code>: Nombre, Apellido paterno, Apellido materno (opcional) y Área (select; <code>""</code> = "Sin área").</li>
+  <li><span class="tag t-action">action</span> <code>editUserData(userId, { nombre, apellidoPaterno, apellidoMaterno, areaId })</code>: hace <code>trim()</code>; nombre o apellido paterno vacíos → <code>USER_NAME_REQUIRED</code> sin llamar a la base; apellido materno vacío → <code>null</code>.</li>
+  <li><span class="tag t-service">service</span> <code>supabase.rpc('edit_user_data', { p_user_id, p_nombre, p_apellido_paterno, p_apellido_materno, p_area_id })</code>.</li>
+  <li><span class="tag t-db">db</span> <code>edit_user_data</code>: <code>is_admin()</code> o <code>42501</code> → <code>UPDATE profiles SET nombres, area_id, updated_at = now()</code>; 0 filas → <code>P0002</code>; área inexistente → <code>23503</code> (FK <code>profiles_area_id_fkey</code>).</li>
+  <li><span class="tag t-action">action</span> <code>revalidatePath('/DMS/admin/user-management')</code> → la página se vuelve a pintar con el dato nuevo. El diálogo se cierra con <code>{ ok: true }</code> o muestra <code>message</code>.</li>
+</ol>
+<p>El rol no se edita en este flujo.</p>
+
+<h3 id="flujo-eliminar">2.6 Eliminar un usuario</h3>
+<p>Punto de entrada: "Eliminar" en cada <code>UserRow</code> → <code>RemoveUserButton</code>.</p>
+<ol class="flow">
+  <li><span class="tag t-client">cliente</span> Si <code>useUser().user.email === user.email</code>, el botón no se pinta (es la fila propia). Si no, abre un <code>DmsDialog</code> de confirmación.</li>
+  <li><span class="tag t-action">action</span> <code>removeUser(userId)</code>.</li>
+  <li><span class="tag t-service">service</span> <code>supabase.rpc('remove_user', { p_user_id })</code>.</li>
+  <li>
+    <span class="tag t-db">db</span> <code>remove_user</code>:
+    <ul>
+      <li><code>is_admin()</code> o <code>42501</code>.</li>
+      <li><code>p_user_id = auth.uid()</code> → <code>22023</code> (nadie se elimina a sí mismo).</li>
+      <li><code>DELETE FROM auth.users WHERE id = p_user_id</code>; 0 filas → <code>P0002</code>.</li>
+      <li>En cascada: <code>profiles</code> (<code>ON DELETE CASCADE</code>), y lo que Supabase Auth cuelga del usuario (sesiones, identidades).</li>
+      <li>Si el usuario aparece en <code>documents.uploaded_by</code>/<code>deleted_by</code>, <code>areas.created_by</code> o <code>folders.created_by</code> (FK sin <code>ON DELETE</code>) → <code>23503</code> y no se borra nada.</li>
+    </ul>
+  </li>
+  <li><span class="tag t-action">action</span> <code>revalidatePath('/DMS/admin/user-management')</code>; el usuario desaparece de la lista.</li>
+</ol>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="funciones">3. Referencia de funciones por archivo</h2>
+
+<h3>Componentes <span class="tag t-client">cliente / servidor</span></h3>
+
+<div class="fn">
+  <div class="sig">UserManagementPage()</div>
+  <div class="body"><code>src/app/DMS/admin/user-management/page.tsx</code>. Server Component async. Carga usuarios y áreas, maneja el error y pinta encabezado, "Agregar usuario" (<code>LinkButton</code> a <code>/DMS/admin/invite-user</code>), <code>UserSearch</code> y <code>UserList</code>.</div>
+</div>
+<div class="fn">
+  <div class="sig">UserList({ users: ManagedUser[], areas: Area[] })</div>
+  <div class="body"><code>src/components/DMS/UserList.tsx</code>. <code>DmsSection</code> "Usuarios" con un <code>UserRow</code> por usuario.</div>
+</div>
+<div class="fn">
+  <div class="sig">UserRow({ user: ManagedUser, areas: Area[] })</div>
+  <div class="body"><code>src/components/DMS/UserRow.tsx</code>. Datos del usuario y acciones. Helper interno <code>fullName(user)</code>: nombre y apellidos unidos, o el correo.</div>
+</div>
+<div class="fn">
+  <div class="sig">EditUserButton({ user: ManagedUser, areas: Area[] })</div>
+  <div class="body"><code>src/components/DMS/EditUserButton.tsx</code>. Cliente. Estado del formulario, <code>handleOpenChange</code>, <code>handleSubmit</code> (en <code>startTransition</code>). Flujo 2.5.</div>
+</div>
+<div class="fn">
+  <div class="sig">RemoveUserButton({ user: ManagedUser })</div>
+  <div class="body"><code>src/components/DMS/RemoveUserButton.tsx</code>. Cliente. Devuelve <code>null</code> en la fila propia. Flujo 2.6.</div>
+</div>
+<div class="fn">
+  <div class="sig">InviteUserPage()</div>
+  <div class="body"><code>src/app/DMS/admin/invite-user/page.tsx</code>. Cliente. Formulario con estados <code>loading</code>, <code>error</code> y <code>done</code>. Flujo 2.3.</div>
+</div>
+<p>Los diálogos usan <code>DmsDialog</code>, <code>DmsDialogField</code>, <code>DmsDialogNote</code> y <code>DMS_DIALOG_CONTROL</code> de <code>src/components/DMS/DmsDialog.tsx</code> (descritos en <a href="./funcionamiento-documentos-y-areas.html#funciones">Documentos y áreas §3</a>).</p>
+
+<h3>Server Actions <span class="tag t-action">action</span></h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Función</th><th>Archivo</th><th>Éxito devuelve</th><th>Llama a</th></tr></thead>
+  <tbody>
+    <tr><td><code>editUserData(userId, input: EditUserInput)</code></td><td rowspan="2"><code>userManagement.actions.ts</code></td><td><code>{ ok }</code></td><td><code>adminProvider.editUserData</code></td></tr>
+    <tr><td><code>removeUser(userId)</code></td><td><code>{ ok }</code></td><td><code>adminProvider.removeUser</code></td></tr>
+    <tr><td><code>inviteUserAction(input: InviteUserInput)</code></td><td><code>inviteUser.actions.ts</code></td><td><code>{ ok, email }</code></td><td><code>adminProvider.inviteNewUser</code></td></tr>
+  </tbody>
+</table>
+</div>
+<p>En error todas devuelven <code>{ ok: false, code, message }</code>. Las de <code>userManagement.actions.ts</code> usan <code>handleError</code> (<code>src/lib/errors/handleError.ts</code>); <code>inviteUserAction</code> tiene su propio <code>catch</code> equivalente.</p>
+
+<h3>Admin <span class="tag t-service">service</span></h3>
+<p>Contrato: <code>src/lib/core/admin/provider/admin.provider.ts</code> · Implementación: <code>src/lib/core/admin/service/admin.service.ts</code> (<code>import 'server-only'</code>) · Instancia: <code>adminProvider</code></p>
+
+<h4>Tipos</h4>
+<pre><code>ManagedUser   { id, email, nombre, apellidoPaterno, apellidoMaterno, role: Role,
+                areaId: string | null, areaName: string | null,
+                activatedAt: string | null, createdAt }
+EditUserInput { nombre, apellidoPaterno, apellidoMaterno: string | null, areaId: string | null }
+InviteUserInput { email, nombre, apellidoPaterno, apellidoMaterno? }
+InvitedUser   { id, email }</code></pre>
+
+<div class="fn">
+  <div class="sig">getAllUsers(): Promise&lt;ManagedUser[]&gt;</div>
+  <div class="body">RPC <code>get_all_users</code>. <code>42501</code> → <code>AccessError.AuthorizationFailure</code> 403 · otro → <code>AdminError.ListUsersFailed</code> 500.</div>
+</div>
+<div class="fn">
+  <div class="sig">editUserData(userId: string, input: EditUserInput): Promise&lt;void&gt;</div>
+  <div class="body">RPC <code>edit_user_data</code>. <code>42501</code> → 403 · <code>P0002</code> → <code>UpdateUserFailed</code> 404 · <code>23503</code> → <code>UpdateUserFailed</code> 409 "El área seleccionada ya no existe." · otro → 500.</div>
+</div>
+<div class="fn">
+  <div class="sig">removeUser(userId: string): Promise&lt;void&gt;</div>
+  <div class="body">RPC <code>remove_user</code>. <code>42501</code> → 403 · <code>P0002</code> → <code>RemoveUserFailed</code> 404 · <code>22023</code> → <code>RemoveUserFailed</code> 400 "No puedes eliminar tu propia cuenta." · <code>23503</code> → <code>RemoveUserFailed</code> 409 (tiene documentos, carpetas o áreas a su nombre) · otro → 500.</div>
+</div>
+<div class="fn">
+  <div class="sig">inviteNewUser(input: InviteUserInput): Promise&lt;InvitedUser&gt;</div>
+  <div class="body"><code>functions.invoke('invite-user-as-admin')</code>. Errores traducidos por <code>toAppError(functionName, error)</code> según el <code>code</code> del body (ver §5). Respuesta sin datos → <code>InviteFailed</code> 500.</div>
+</div>
+<p>Helper interno <code>insufficientPrivilege(action, message)</code>: arma el <code>AccessError</code> 403 para cualquier <code>42501</code> de las RPCs.</p>
+
+<h3>Edge Function <span class="tag t-edge">edge</span></h3>
+<div class="fn">
+  <div class="sig">invite-user-as-admin (POST { email, nombre, apellido_paterno, apellido_materno? })</div>
+  <div class="body"><code>supabase/functions/invite-user-as-admin/index.ts</code>. Helpers: <code>parseBody</code> (valida y normaliza) y <code>errorResponse(status, code, message)</code> (formato <code>{ code, message }</code>). Necesita el secreto <code>INVITE_REDIRECT_URL</code>.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="db">4. Base de datos</h2>
+
+<h3><code>profiles</code></h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Columna</th><th>Tipo</th><th>Uso</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID PK → auth.users(id) <code>ON DELETE CASCADE</code></td><td>Mismo id que la cuenta de Auth. Borrar la cuenta borra el perfil.</td></tr>
+    <tr><td><code>nombre</code>, <code>apellido_paterno</code>, <code>apellido_materno</code></td><td>TEXT</td><td>Se llenan al invitar (metadata) y se editan con <code>edit_user_data</code>.</td></tr>
+    <tr><td><code>role</code></td><td><code>app_role</code> (<code>user</code> | <code>admin</code> | <code>superadmin</code>) default <code>user</code></td><td>Lo leen <code>is_admin()</code> y el proxy.</td></tr>
+    <tr><td><code>area_id</code></td><td>UUID → areas(id) <code>ON DELETE SET NULL</code></td><td>Una sola área por usuario. <code>NULL</code> = sin área (estado de todo usuario recién invitado).</td></tr>
+    <tr><td><code>activated_at</code></td><td>TIMESTAMPTZ</td><td>Lo pone el trigger de activación. <code>NULL</code> = invitación pendiente.</td></tr>
+    <tr><td><code>created_by</code></td><td>UUID → profiles(id) <code>ON DELETE SET NULL</code></td><td>Admin que invitó. Lo escribe la Edge Function.</td></tr>
+    <tr><td><code>created_at</code>, <code>updated_at</code></td><td>TIMESTAMPTZ</td><td><code>edit_user_data</code> actualiza <code>updated_at</code>.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Permisos directos sobre <code>profiles</code></h3>
+<ul>
+  <li>SELECT: política "profiles: leer propio" → cada usuario solo lee su perfil.</li>
+  <li>UPDATE: "profiles: actualizar propio" + <code>GRANT UPDATE</code> solo en las columnas de nombre. Nadie puede cambiar su rol, área ni <code>activated_at</code> directamente.</li>
+  <li>Por eso la gestión de usuarios pasa por RPCs <code>SECURITY DEFINER</code>: con el cliente de sesión, un admin no podría leer ni editar perfiles ajenos.</li>
+</ul>
+
+<h3>Funciones y triggers</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Nombre</th><th>Tipo</th><th>Qué hace</th><th>Ejecutable por</th></tr></thead>
+  <tbody>
+    <tr><td><code>is_admin()</code></td><td>SQL, SECURITY DEFINER</td><td><code>true</code> si el rol de <code>auth.uid()</code> es <code>admin</code>/<code>superadmin</code>.</td><td>authenticated</td></tr>
+    <tr><td><code>get_all_users()</code></td><td>plpgsql, SECURITY DEFINER, STABLE</td><td>Lista usuarios (flujo 2.2). Devuelve <code>TABLE(id, email, nombre, apellido_paterno, apellido_materno, role, area_id, area_name, activated_at, created_at)</code>.</td><td>authenticated</td></tr>
+    <tr><td><code>edit_user_data(p_user_id, p_nombre, p_apellido_paterno, p_apellido_materno, p_area_id)</code></td><td>plpgsql, SECURITY DEFINER</td><td>Flujo 2.5.</td><td>authenticated</td></tr>
+    <tr><td><code>remove_user(p_user_id)</code></td><td>plpgsql, SECURITY DEFINER</td><td>Flujo 2.6.</td><td>authenticated</td></tr>
+    <tr><td><code>handle_new_user()</code> / <code>on_auth_user_created</code></td><td>trigger AFTER INSERT en auth.users</td><td>Crea el perfil con los nombres de la metadata.</td><td>—</td></tr>
+    <tr><td><code>handle_user_activated()</code> / <code>on_auth_user_activated</code></td><td>trigger AFTER UPDATE OF encrypted_password</td><td>Pone <code>activated_at</code> la primera vez que se crea contraseña.</td><td>—</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Las tres RPCs nuevas tienen <code>SET search_path = ''</code>, <code>REVOKE</code> a <code>PUBLIC</code>/<code>anon</code> y <code>GRANT</code> a <code>authenticated</code>. Como son <code>SECURITY DEFINER</code>, <strong>el <code>IF NOT public.is_admin()</code> del inicio es lo único que las protege</strong>.</p>
+
+<h3>Migraciones relevantes</h3>
+<p><code>20261023010842_create_profiles_table.sql</code>, <code>20261025232246_is_admin_helper.sql</code>, <code>20261104120000_grant_profiles_select.sql</code>, <code>20261110120000_profiles_activated_at.sql</code>, <code>20261119120000_profiles_area_fk.sql</code>, <code>20261126160000_user_management_rpc.sql</code>.</p>
+<p>Tras agregar o cambiar una: <code>npx supabase db reset</code> y <code>npx supabase gen types typescript --local | Out-File -Encoding utf8 src\lib\core\database.types.ts</code>. Sin regenerar, TypeScript no reconoce las RPCs nuevas en <code>supabase.rpc(...)</code>.</p>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="errores">5. Manejo de errores</h2>
+
+<p>Mismo recorrido que el resto del DMS: Postgres/Edge Function → <code>AppError</code> en el service → <code>{ ok: false, code, message }</code> en la action → <code>message</code> en el diálogo o formulario.</p>
+
+<h3>RPCs</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Código Postgres</th><th>Significado</th><th>Error de la app</th></tr></thead>
+  <tbody>
+    <tr><td><code>42501</code></td><td>no es admin</td><td><code>AccessError.AuthorizationFailure</code> 403</td></tr>
+    <tr><td><code>P0002</code></td><td>usuario no existe</td><td><code>UpdateUserFailed</code> / <code>RemoveUserFailed</code> 404</td></tr>
+    <tr><td><code>22023</code></td><td>eliminarse a sí mismo</td><td><code>RemoveUserFailed</code> 400</td></tr>
+    <tr><td><code>23503</code></td><td>área inexistente (editar) / usuario referenciado (eliminar)</td><td><code>UpdateUserFailed</code> / <code>RemoveUserFailed</code> 409</td></tr>
+    <tr><td>otro</td><td>—</td><td><code>ListUsersFailed</code> / <code>UpdateUserFailed</code> / <code>RemoveUserFailed</code> 500</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Edge Function (<code>toAppError</code>)</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th><code>code</code> del body</th><th>HTTP</th><th>Error de la app</th></tr></thead>
+  <tbody>
+    <tr><td><code>forbidden</code></td><td>403</td><td><code>AccessError.AuthorizationFailure</code></td></tr>
+    <tr><td><code>admin_check_failed</code></td><td>500</td><td><code>AccessError.RoleCheckFailed</code></td></tr>
+    <tr><td><code>invalid_body</code></td><td>400</td><td><code>AdminError.InvalidInput</code></td></tr>
+    <tr><td><code>email_not_institutional</code></td><td>422</td><td><code>AdminError.EmailNotInstitutional</code></td></tr>
+    <tr><td><code>email_exists</code></td><td>409</td><td><code>AdminError.EmailExists</code></td></tr>
+    <tr><td>sin <code>code</code>, status 401</td><td>401</td><td><code>AuthError.AuthenticationFailure</code></td></tr>
+    <tr><td>otro / sin respuesta</td><td>500</td><td><code>AdminError.InviteFailed</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Validaciones en la action (no llegan a la base)</h3>
+<ul>
+  <li><code>USER_NAME_REQUIRED</code> — <code>editUserData</code> con nombre o apellido paterno vacíos.</li>
+</ul>
+
+<p><code>AdminErrorCode</code> (<code>src/lib/errors/admin.ts</code>): <code>InvalidInput</code>, <code>EmailNotInstitutional</code>, <code>EmailExists</code>, <code>InviteFailed</code>, <code>ListUsersFailed</code>, <code>UpdateUserFailed</code>, <code>RemoveUserFailed</code>.</p>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="extender">6. Cómo extender</h2>
+<dl>
+  <dt>Paginación de la lista</dt>
+  <dd>Buscar los <code>TODO:</code> de paginación. (1) <code>get_all_users</code> recibe <code>p_limit</code>/<code>p_offset</code> (o un cursor) y devuelve el total. (2) <code>getAllUsers</code> recibe y pasa esos parámetros. (3) La página los lee de <code>searchParams</code> y pinta controles de página.</dd>
+
+  <dt>Búsqueda y filtro por área</dt>
+  <dd><code>UserSearch</code> es solo visual. Opciones: filtrar en el servidor con parámetros en <code>get_all_users</code> (necesario con paginación), o filtrar en el cliente la lista ya cargada.</dd>
+
+  <dt>Editar el rol</dt>
+  <dd>Agregar <code>p_role</code> a <code>edit_user_data</code> (o una RPC aparte). Debe cumplir la regla de privilegios: nadie asigna un rol mayor al propio. Después: campo en <code>EditUserInput</code>, en el <code>rpc()</code> y un select en <code>EditUserButton</code>.</dd>
+
+  <dt>Mostrar invitaciones pendientes</dt>
+  <dd><code>ManagedUser.activatedAt</code> ya llega; basta un badge en <code>UserRow</code> cuando es <code>null</code>.</dd>
+
+  <dt>Permitir eliminar usuarios con documentos o carpetas</dt>
+  <dd>Migración que cambie las FK de <code>documents.uploaded_by</code>/<code>deleted_by</code>, <code>areas.created_by</code> y <code>folders.created_by</code> a <code>ON DELETE SET NULL</code>. Sin eso, <code>remove_user</code> responde <code>23503</code>.</dd>
+
+  <dt>Otra operación de admin</dt>
+  <dd>Si solo necesita SQL: RPC con <code>is_admin()</code> primero → método en <code>AdminProvider</code> + <code>SupabaseAdminService</code> → código en <code>AdminErrorCode</code> → action con <code>handleError</code> y <code>revalidatePath</code>. Si necesita la secret key (API de Auth admin): Edge Function, según ADR-007.</dd>
+</dl>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="limites">7. Comportamientos no obvios y límites actuales</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Comportamiento</th><th>Consecuencia</th></tr></thead>
+  <tbody>
+    <tr><td><code>get_all_users</code> trae a todos los usuarios.</td><td>Con muchos usuarios la página será lenta. Pendiente: paginación (<code>TODO:</code>).</td></tr>
+    <tr><td>Los usuarios invitados quedan con <code>area_id = NULL</code>.</td><td>Aparecen como "Sin área" hasta que un admin los edita.</td></tr>
+    <tr><td>Las RPCs solo validan <code>is_admin()</code>.</td><td>Cualquier admin puede editar o eliminar a otro admin o a un superadmin. Solo se impide eliminarse a sí mismo.</td></tr>
+    <tr><td><code>remove_user</code> borra de <code>auth.users</code> con SQL.</td><td>No pasa por la API de Auth ni por una Edge Function. Es irreversible: no hay soft delete de usuarios.</td></tr>
+    <tr><td>Usuarios que subieron documentos o crearon carpetas/áreas no se pueden eliminar.</td><td><code>23503</code> → "No se puede eliminar: el usuario tiene documentos, carpetas o áreas a su nombre."</td></tr>
+    <tr><td><code>RemoveUserButton</code> se oculta comparando correos.</td><td><code>CurrentUser</code> del contexto no trae el id. Es solo presentación; la base valida con <code>auth.uid()</code>.</td></tr>
+    <tr><td><code>EditUserButton</code> precarga desde la prop <code>user</code>.</td><td>Si otro admin cambió al usuario, el diálogo muestra los datos de cuando se pintó la página; guardar los sobrescribe.</td></tr>
+    <tr><td><code>revalidatePath</code> refresca solo la página de quien hizo el cambio.</td><td>Otros admins ven el cambio al recargar o al vencer su Router Cache.</td></tr>
+    <tr><td>El área del usuario hoy es informativa.</td><td>La lectura de documentos no se filtra por área (<code>can_access_documents()</code> solo pide sesión).</td></tr>
+    <tr><td><code>UserSearch</code> no tiene funcionalidad.</td><td>Búsqueda y filtro son placeholders visuales.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="glosario">8. Glosario</h2>
+<dl>
+  <dt>Perfil (<code>profiles</code>)</dt>
+  <dd>Datos del DMS de un usuario (nombre, rol, área). Una fila por cuenta de <code>auth.users</code>, con el mismo id.</dd>
+
+  <dt>Invitación</dt>
+  <dd>Cuenta creada por un admin sin contraseña. El usuario la activa al crear su contraseña desde el correo.</dd>
+
+  <dt>SECURITY DEFINER</dt>
+  <dd>Función SQL que corre con los permisos de su dueño, no de quien la llama. Se salta RLS, así que debe validar permisos por sí misma.</dd>
+
+  <dt>Edge Function</dt>
+  <dd>Función que corre en la infraestructura de Supabase (Deno). Aquí se usa para operaciones que necesitan la secret key.</dd>
+
+  <dt>Secret key (service role)</dt>
+  <dd>Credencial de Supabase que se salta RLS. Solo existe en Supabase (Edge Functions), nunca en Next.</dd>
+
+  <dt>Proxy</dt>
+  <dd><code>src/proxy.ts</code> (antes llamado middleware). Corre antes de cada página del DMS y decide si deja pasar o redirige.</dd>
+</dl>
+
+<footer>
+  Referencia de <code>docs/</code>. Documentos, áreas y carpetas: <a href="./funcionamiento-documentos-y-areas.html">funcionamiento-documentos-y-areas.html</a>. Decisiones de fondo en <code>docs/decisions/</code> (en particular ADR-006 y ADR-007).
+</footer>
+
+</main>
+</body>
+</html>

@@ -14,6 +14,7 @@ Registro de decisiones arquitectónicas del proyecto. Cada ADR documenta una dec
 | [ADR-006](./ADR-006-simplified-roles-in-profiles.md) | Modelo de roles simplificado en `profiles` | Aceptado |
 | [ADR-007](./ADR-007-privileged-operations-edge-functions.md) | Operaciones con service role en Edge Functions | Aceptado |
 | [ADR-008](./ADR-008-phased-document-access.md) | Acceso a documentos por fases | Aceptado (fase 1) |
-| [ADR-009](./ADR-009-view-only-documents-and-access-log.md) | Documentos de solo lectura y registro de accesos | Aceptado |
+| [ADR-009](./ADR-009-view-only-documents-and-access-log.md) | Documentos de solo lectura y registro de accesos | Parcialmente reemplazado por ADR-012 |
 | [ADR-010](./ADR-010-direct-upload-with-pending-row.md) | Subida directa a R2 con fila previa | Aceptado |
 | [ADR-011](./ADR-011-folders-and-area-inheritance.md) | Folders y herencia de áreas | Aceptado |
+| [ADR-012](./ADR-012-access-log-and-download-permission.md) | Bitácora de accesos en la base y permiso de descarga | Aceptado |

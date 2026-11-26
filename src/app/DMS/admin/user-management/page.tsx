@@ -1,25 +1,34 @@
 import { UserPlus } from "lucide-react";
 
+import { adminProvider } from "@/lib/core/admin/service/admin.service";
+import type { ManagedUser } from "@/lib/core/admin/provider/admin.provider";
+import { areasProvider } from "@/lib/core/areas/service/area.service";
+import type { Area } from "@/lib/core/areas/provider/areas.provider";
+import { handleError } from "@/lib/errors/handleError";
 import { LinkButton } from "@/components/DMS/LinkButton";
 import { UserList } from "@/components/DMS/UserList";
-import type { UserSummary } from "@/components/DMS/UserRow";
 import { UserSearch } from "@/components/DMS/UserSearch";
 
-// Datos de ejemplo: se eliminan cuando se conecte la lista real de usuarios.
-const EXAMPLE_USERS: UserSummary[] = [
-    { id: "1", name: "Ana López", email: "ana.lopez@somameat.com", role: "area_admin", area: "Calidad" },
-    { id: "2", name: "Carlos Ramírez", email: "carlos.ramirez@somameat.com", role: "user", area: "Producción" },
-    { id: "3", name: "María Torres", email: "maria.torres@somameat.com", role: "user", area: "Marca" },
-];
-
 /**
- * Dashboard de gestión de usuarios. Por ahora solo es visual: la búsqueda, el
- * filtro y las acciones no tienen funcionalidad. El acceso a esta ruta lo
- * controla el proxy.
+ * Dashboard de gestión de usuarios: lista todos los usuarios y permite
+ * editarlos (nombre y área). La búsqueda y el filtro todavía no tienen
+ * funcionalidad. El acceso a esta ruta lo controla el proxy, y
+ * `get_all_users()` vuelve a validar `is_admin()` en la base.
  *
  * @returns la página de gestión de usuarios
  */
-export default function UserManagementPage() {
+export default async function UserManagementPage() {
+    let users: ManagedUser[] = [];
+    let areas: Area[] = [];
+    let errorMessage: string | null = null;
+
+    try {
+        // TODO: paginación. Hoy se traen todos los usuarios de una vez.
+        [users, areas] = await Promise.all([adminProvider.getAllUsers(), areasProvider.fetchAllAreas()]);
+    } catch (err) {
+        errorMessage = handleError("UserManagementPage", err).message;
+    }
+
     return (
         <div className="mx-auto w-full max-w-5xl space-y-8 px-4 py-6 md:px-8 md:py-10">
             <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -36,7 +45,13 @@ export default function UserManagementPage() {
                 />
             </header>
             <UserSearch />
-            <UserList users={EXAMPLE_USERS} />
+            {errorMessage ? (
+                <p role="alert" className="rounded-lg bg-soma-red/10 px-4 py-3 text-sm text-soma-red">
+                    {errorMessage}
+                </p>
+            ) : (
+                <UserList users={users} areas={areas} />
+            )}
         </div>
     );
 }

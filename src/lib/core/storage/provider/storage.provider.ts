@@ -51,7 +51,27 @@ export const FILE_SUFFIX = {
 } as const satisfies Record<SupportedFileTypes, `.${string}`>;
 
 export function isSupportedFileType(type: string): type is SupportedFileTypes {
-    return (Object.values(SupportedFileTypes) as string[]).includes(type); 
+    return (Object.values(SupportedFileTypes) as string[]).includes(type);
+}
+
+/**
+ * Nombre de archivo con la extensión que corresponde a su MIME type, para
+ * que al verlo o descargarlo el sistema operativo sepa con qué abrirlo. Si el
+ * nombre ya termina en esa extensión (sin importar mayúsculas) no la repite.
+ * Un MIME que no está en `SupportedFileTypes` deja el nombre igual.
+ *
+ * @param name - nombre del documento (`documents.name`)
+ * @param fileType - MIME type del documento (`documents.file_type`)
+ * @returns el nombre con extensión
+ * @example
+ * withFileExtension("Brand Book v3.0", "application/pdf")     // "Brand Book v3.0.pdf"
+ * withFileExtension("Manual HACCP.PDF", "application/pdf")    // "Manual HACCP.PDF"
+ */
+export function withFileExtension(name: string, fileType: string): string {
+    if (!isSupportedFileType(fileType)) return name;
+
+    const suffix = FILE_SUFFIX[fileType];
+    return name.toLowerCase().endsWith(suffix) ? name : `${name}${suffix}`;
 }
 export interface DocumentPayload {
     name: string;
@@ -69,6 +89,12 @@ export interface DownloadUrlInput {
     key: string;
     /** Nombre con el que se descarga el archivo (`documents.name`). */
     fileName: string;
+    /**
+     * `inline` para que el navegador lo muestre (PDF, imágenes) o `attachment`
+     * para forzar la descarga. Por defecto `attachment`. Un tipo que el
+     * navegador no sabe mostrar (ej. `.docx`) se descarga aunque sea `inline`.
+     */
+    disposition?: 'inline' | 'attachment';
 }
 
 /**

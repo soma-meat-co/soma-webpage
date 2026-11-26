@@ -8,6 +8,8 @@
  * Edge Functions de Supabase, que validan el rol de quien llama.
  */
 
+import type { Role } from '@/lib/core/auth/provider/auth.provider';
+
 /**
  * Datos para invitar a un usuario nuevo. El rol no se recibe: todo usuario
  * invitado queda como `user`.
@@ -25,6 +27,35 @@ export interface InviteUserInput {
 export interface InvitedUser {
     id: string;
     email: string;
+}
+
+/**
+ * Usuario en la gestión de usuarios: su perfil, su correo y su área.
+ */
+export interface ManagedUser {
+    id: string;
+    email: string;
+    nombre: string | null;
+    apellidoPaterno: string | null;
+    apellidoMaterno: string | null;
+    role: Role;
+    /** `null` si todavía no tiene área asignada. */
+    areaId: string | null;
+    areaName: string | null;
+    /** Fecha en que creó su contraseña; `null` si no ha aceptado la invitación. */
+    activatedAt: string | null;
+    createdAt: string;
+}
+
+/**
+ * Datos que un admin puede cambiar de un usuario. El rol no se edita aquí.
+ */
+export interface EditUserInput {
+    nombre: string;
+    apellidoPaterno: string;
+    apellidoMaterno: string | null;
+    /** Área del usuario, o `null` para dejarlo sin área. */
+    areaId: string | null;
 }
 
 /**
@@ -51,4 +82,43 @@ export interface AdminProvider {
      * })
      */
     inviteNewUser(input: InviteUserInput): Promise<InvitedUser>;
+
+    /**
+     * Lista todos los usuarios con su correo y su área, ordenados por nombre.
+     * Solo admin. Todavía no pagina: trae todos.
+     *
+     * @returns todos los usuarios
+     * @throws {AccessError} `AuthorizationFailure` si quien llama no es admin
+     * @throws {AdminError} `ListUsersFailed` si la consulta falla por otra razón
+     * @example
+     * const users = await adminProvider.getAllUsers()
+     */
+    getAllUsers(): Promise<ManagedUser[]>;
+
+    /**
+     * Cambia el nombre y el área de un usuario. Solo admin.
+     *
+     * @param userId - `id` del usuario
+     * @param input - nombre, apellidos y área (`null` para dejarlo sin área)
+     * @throws {AccessError} `AuthorizationFailure` si quien llama no es admin
+     * @throws {AdminError} `UpdateUserFailed` si el usuario o el área no existen,
+     *   o si la actualización falla por otra razón
+     * @example
+     * await adminProvider.editUserData(userId, { nombre: "Ana", apellidoPaterno: "López", apellidoMaterno: null, areaId })
+     */
+    editUserData(userId: string, input: EditUserInput): Promise<void>;
+
+    /**
+     * Elimina la cuenta de un usuario (y su perfil). Solo admin; nadie puede
+     * eliminarse a sí mismo.
+     *
+     * @param userId - `id` del usuario
+     * @throws {AccessError} `AuthorizationFailure` si quien llama no es admin
+     * @throws {AdminError} `RemoveUserFailed` si el usuario no existe, si es
+     *   quien llama, si tiene documentos, carpetas o áreas a su nombre, o si
+     *   falla por otra razón
+     * @example
+     * await adminProvider.removeUser(userId)
+     */
+    removeUser(userId: string): Promise<void>;
 }

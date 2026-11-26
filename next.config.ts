@@ -44,6 +44,15 @@ const nextConfig: NextConfig = {
     ],
   },
   reactStrictMode: true,
+  experimental: {
+    // Router Cache (navegador): segundos que se reusa una página ya visitada
+    // antes de volver a pedirla. Las páginas del DMS son dinámicas (leen
+    // cookies), así que `dynamic` es el que aplica. Las acciones que escriben
+    // usan revalidatePath y no esperan a que venza. Ver ADR-011.
+    staleTimes: {
+      dynamic: 120,
+    },
+  },
 };
 
 export default nextConfig;

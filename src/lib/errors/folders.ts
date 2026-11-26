@@ -8,6 +8,7 @@ export enum FolderErrorCode {
     FetchFailed = 'FOLDER_FETCH_FAILED',
     AssignAreaFailed = 'FOLDER_ASSIGN_AREA_FAILED',
     RemoveAreaFailed = 'FOLDER_REMOVE_AREA_FAILED',
+    UpdateFailed = 'FOLDER_UPDATE_FAILED',
 }
 
 export class FolderError extends AppError {

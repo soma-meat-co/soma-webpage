@@ -46,17 +46,19 @@ function expiresIn(ttlSeconds: number): Date {
 }
 
 /**
- * Arma el header `Content-Disposition` para descargar con el nombre original.
- * Usa `filename*` con UTF-8 para que los acentos y la ñ lleguen bien.
+ * Arma el header `Content-Disposition` con el nombre original. `inline` deja
+ * que el navegador muestre el archivo; `attachment` fuerza la descarga. Usa
+ * `filename*` con UTF-8 para que los acentos y la ñ lleguen bien.
  *
- * @param fileName - nombre con el que se descarga el archivo
+ * @param disposition - `inline` o `attachment`
+ * @param fileName - nombre con el que se muestra o descarga el archivo
  * @returns el valor del header
  * @example
- * attachmentDisposition("Brand Book v3.0.pdf")
+ * contentDisposition("attachment", "Brand Book v3.0.pdf")
  * // "attachment; filename*=UTF-8''Brand%20Book%20v3.0.pdf"
  */
-function attachmentDisposition(fileName: string): string {
-    return `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`;
+function contentDisposition(disposition: 'inline' | 'attachment', fileName: string): string {
+    return `${disposition}; filename*=UTF-8''${encodeURIComponent(fileName)}`;
 }
 
 /**
@@ -111,23 +113,25 @@ class R2StorageService implements StorageProvider {
     }
 
     /**
-     * Firma una URL de `GET` de vida corta. El archivo se descarga con
-     * `fileName` como nombre, no con la key.
+     * Firma una URL de `GET` de vida corta. R2 responde con el
+     * `Content-Disposition` pedido: `inline` para mostrar el archivo o
+     * `attachment` (por defecto) para descargarlo con `fileName` como nombre.
      *
-     * @param input - key del objeto y nombre de descarga
+     * @param input - key del objeto, nombre y modo (`inline` o `attachment`)
      * @returns la URL de descarga y su expiración
      * @throws {StorageError} `DownloadUrlFailed` si no se pudo firmar la URL
      * @example
      * const { url } = await storageProvider.createDownloadUrl({
      *   key: document.file_path,
      *   fileName: document.name,
+     *   disposition: 'inline',
      * })
      */
     async createDownloadUrl(input: DownloadUrlInput): Promise<SignedUrl> {
         const command = new GetObjectCommand({
             Bucket: privateEnv.R2_BUCKET,
             Key: input.key,
-            ResponseContentDisposition: attachmentDisposition(input.fileName),
+            ResponseContentDisposition: contentDisposition(input.disposition ?? 'attachment', input.fileName),
         });
 
         try {

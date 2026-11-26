@@ -3,7 +3,8 @@ import 'server-only';
 import { createSupabaseServerClient } from '@/lib/core/auth/serverClient';
 import type { TablesInsert } from '@/lib/core/database.types';
 import { storageProvider } from '@/lib/core/storage/service/storage.service';
-import type { DocumentsProvider, PendingDocumentInput, PendingDocumentResponse } from '../provider/documents.provider';
+import type { DocumentAccessType, DocumentFile, DocumentsProvider, PendingDocumentInput, PendingDocumentResponse, UpdateDocumentInput } from '../provider/documents.provider';
+import type { FolderDocument } from '@/lib/core/folders/provider/folders.provider';
 
 // INDEX: Error imports
 import { AccessError, AccessErrorCode } from '@/lib/errors/access';
@@ -19,6 +20,12 @@ const UNIQUE_VIOLATION = '23505';
 
 /** Código de Postgres cuando una llave foránea apunta a una fila que no existe. */
 const FOREIGN_KEY_VIOLATION = '23503';
+
+/** Código de Postgres cuando un valor no tiene el formato del tipo (ej. un uuid inválido). */
+const INVALID_TEXT_REPRESENTATION = '22P02';
+
+/** Código de Postgres `no_data_found`. Lo lanza `update_document` si el documento no existe. */
+const NO_DATA_FOUND = 'P0002';
 
 /** Intentos de insert antes de rendirse si el `id` generado ya existe. */
 const MAX_INSERT_ATTEMPTS = 3;
@@ -273,6 +280,211 @@ class SupabaseDocumentsService implements DocumentsProvider {
                 404,
             );
         }
+    }
+
+    /**
+     * Llama al RPC `get_documents_by_ids` con la sesión de quien llama. El
+     * RPC valida `can_access_documents()`, aplica RLS y regresa los
+     * documentos en el orden de la lista. Con una lista vacía regresa `[]`
+     * sin consultar.
+     *
+     * @param documentIds - ids de los documentos, en el orden deseado
+     * @returns los documentos encontrados, en el orden de `documentIds`
+     * @throws {AccessError} `AuthorizationFailure` si el RPC responde `42501`
+     * @throws {DocumentError} `FetchFailed` si el RPC falló o no regresó datos
+     * @example
+     * const recent = await documentsProvider.getDocumentsByIds(ids)
+     */
+    async getDocumentsByIds(documentIds: string[]): Promise<FolderDocument[]> {
+        if (documentIds.length === 0) return [];
+
+        const supabase = await createSupabaseServerClient();
+
+        const { data, error } = await supabase.rpc('get_documents_by_ids', {
+            p_document_ids: documentIds,
+        });
+
+        if (error) {
+            if (error.code === RLS_VIOLATION) {
+                throw new AccessError(
+                    AccessErrorCode.AuthorizationFailure,
+                    `getDocumentsByIds: sin acceso a documentos: ${error.message}`,
+                    'No cuentas con los permisos necesarios para esta acción.',
+                    403,
+                );
+            }
+            throw new DocumentError(
+                DocumentErrorCode.FetchFailed,
+                `No se pudieron leer los documentos [${documentIds.join(', ')}]: ${error.message}`,
+                'No se pudieron cargar los documentos. Intenta más tarde.',
+                500,
+            );
+        }
+
+        if (!data) {
+            throw new DocumentError(
+                DocumentErrorCode.FetchFailed,
+                'get_documents_by_ids no devolvió datos.',
+                'No se pudieron cargar los documentos. Intenta más tarde.',
+                500,
+            );
+        }
+
+        return data as unknown as FolderDocument[];
+    }
+
+    /**
+     * Llama al RPC `access_document`, que en una sola transacción valida el
+     * permiso del tipo de acceso (si no, `42501`), lee el documento y lo
+     * registra en `document_access_log`. 0 filas o un id con formato
+     * inválido (`22P02`) cuentan como no encontrado; en ese caso no se
+     * registró nada.
+     *
+     * @param documentId - id del documento
+     * @param accessType - `view` para "Ver", `download` para "Descargar"
+     * @returns nombre, key y MIME type del archivo
+     * @throws {AccessError} `AuthorizationFailure` si el RPC responde `42501`
+     * @throws {DocumentError} `NotFound` si no hay documento con ese id;
+     *   `FetchFailed` si el RPC falló por otra razón (incluye que no se pudo
+     *   registrar el acceso)
+     * @example
+     * const file = await documentsProvider.accessDocument(documentId, 'download')
+     */
+    async accessDocument(documentId: string, accessType: DocumentAccessType): Promise<DocumentFile> {
+        const supabase = await createSupabaseServerClient();
+
+        const { data, error } = await supabase.rpc('access_document', {
+            p_document_id: documentId,
+            p_access_type: accessType,
+        });
+
+        if (error && error.code === RLS_VIOLATION) {
+            throw new AccessError(
+                AccessErrorCode.AuthorizationFailure,
+                `accessDocument: sin permiso de ${accessType} para ${documentId}: ${error.message}`,
+                accessType === 'download'
+                    ? 'No cuentas con los permisos necesarios para descargar documentos.'
+                    : 'No cuentas con los permisos necesarios para ver documentos.',
+                403,
+            );
+        }
+
+        if (error && error.code !== INVALID_TEXT_REPRESENTATION) {
+            throw new DocumentError(
+                DocumentErrorCode.FetchFailed,
+                `access_document(${documentId}, ${accessType}) falló: ${error.message}`,
+                'No se pudo abrir el documento. Intenta más tarde.',
+                500,
+            );
+        }
+
+        const file = data?.[0];
+        if (!file) {
+            throw new DocumentError(
+                DocumentErrorCode.NotFound,
+                `Documento ${documentId} no encontrado (${accessType}): no existe, está eliminado, no terminó de subirse o el id es inválido.`,
+                'No se encontró el documento o no tienes acceso a él.',
+                404,
+            );
+        }
+
+        return { name: file.name, filePath: file.file_path, fileType: file.file_type };
+    }
+
+    /**
+     * Lee los `area_id` de `document_areas` para un documento.
+     *
+     * @param documentId - id del documento
+     * @returns ids de sus áreas propias
+     * @throws {AccessError} `AuthorizationFailure` si Postgres responde `42501`
+     * @throws {DocumentError} `FetchFailed` si la consulta falló
+     * @example
+     * const areaIds = await documentsProvider.getDocumentAreaIds(documentId)
+     */
+    async getDocumentAreaIds(documentId: string): Promise<string[]> {
+        const supabase = await createSupabaseServerClient();
+
+        const { data, error } = await supabase
+            .from('document_areas')
+            .select('area_id')
+            .eq('document_id', documentId);
+
+        if (error) {
+            if (error.code === RLS_VIOLATION) {
+                throw new AccessError(
+                    AccessErrorCode.AuthorizationFailure,
+                    `getDocumentAreaIds: sin acceso a las áreas de ${documentId}: ${error.message}`,
+                    'No cuentas con los permisos necesarios para esta acción.',
+                    403,
+                );
+            }
+            throw new DocumentError(
+                DocumentErrorCode.FetchFailed,
+                `No se pudieron leer las áreas del documento ${documentId}: ${error.message}`,
+                'No se pudieron cargar las áreas del documento. Intenta más tarde.',
+                500,
+            );
+        }
+
+        return data.map((row) => row.area_id);
+    }
+
+    /**
+     * Llama al RPC `update_document`, que en una transacción cambia nombre,
+     * carpeta y áreas propias. Traduce los códigos de Postgres a mensajes
+     * para el usuario.
+     *
+     * @param documentId - id del documento
+     * @param input - nombre, carpeta destino y lista completa de áreas propias
+     * @throws {AccessError} `AuthorizationFailure` si el RPC responde `42501`
+     * @throws {DocumentError} `UpdateFailed` si el documento no existe o está
+     *   eliminado (`P0002`), si la carpeta o un área no existen (`23503`), o
+     *   por otro error
+     * @example
+     * await documentsProvider.updateDocument(documentId, { name: 'Manual HACCP', folderId: null, areaIds: [] })
+     */
+    async updateDocument(documentId: string, input: UpdateDocumentInput): Promise<void> {
+        const supabase = await createSupabaseServerClient();
+
+        const { error } = await supabase.rpc('update_document', {
+            p_document_id: documentId,
+            p_name: input.name,
+            p_folder_id: input.folderId,
+            p_area_ids: input.areaIds,
+        });
+
+        if (!error) return;
+
+        if (error.code === RLS_VIOLATION) {
+            throw new AccessError(
+                AccessErrorCode.AuthorizationFailure,
+                `updateDocument: permisos insuficientes para editar ${documentId}: ${error.message}`,
+                'No cuentas con los permisos necesarios para esta acción.',
+                403,
+            );
+        }
+        if (error.code === NO_DATA_FOUND) {
+            throw new DocumentError(
+                DocumentErrorCode.UpdateFailed,
+                `updateDocument: no existe el documento ${documentId} o está eliminado: ${error.message}`,
+                'No se encontró el documento.',
+                404,
+            );
+        }
+        if (error.code === FOREIGN_KEY_VIOLATION) {
+            throw new DocumentError(
+                DocumentErrorCode.UpdateFailed,
+                `updateDocument: no existe la carpeta ${input.folderId} o un área de [${input.areaIds.join(', ')}]: ${error.message}`,
+                'No se encontró la carpeta destino o alguna de las áreas.',
+                404,
+            );
+        }
+        throw new DocumentError(
+            DocumentErrorCode.UpdateFailed,
+            `No se pudo editar el documento ${documentId}: ${error.message}`,
+            'No se pudo guardar el documento. Intenta más tarde.',
+            500,
+        );
     }
 }
 

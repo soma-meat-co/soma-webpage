@@ -27,6 +27,13 @@ CREATE TABLE IF NOT EXISTS folder_areas (
 ALTER TABLE documents
     ADD COLUMN folder_id  UUID REFERENCES folders(id) ON DELETE RESTRICT;
 
+-- INDEX: Índices para navegar folders
+-- Postgres no indexa solo las llaves foráneas. Sin este índice, listar los
+-- documentos de un folder recorre toda la tabla documents.
+-- folders.parent_id no necesita uno propio: el UNIQUE (parent_id, folder_name)
+-- ya crea un índice que empieza por parent_id (y sirve para ORDER BY folder_name).
+CREATE INDEX IF NOT EXISTS documents_folder_id_idx ON documents (folder_id);
+
 -- INDEX: Prevención de ciclos entre folders (ADR-011)
 -- Un ciclo solo se crea al mover un folder (UPDATE de parent_id). Se recorren
 -- los ancestros del nuevo padre; si el folder que se mueve aparece entre

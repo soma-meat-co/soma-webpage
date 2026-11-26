@@ -1,9 +1,12 @@
 {
   "folders": [
     { "name": "🧭 app", "path": "src/app" },
+    { "name": "🧩 components" , "path": "src/components"},
     { "name": "🧰 lib", "path": "src/lib" },
     { "name": "🗄️ supabase", "path": "supabase" },
     { "name": "🏠 root", "path": "." }
   ],
-  "settings": {}
+  "settings": {
+    "todo-tree.tree.scanMode": "workspace"
+  }
 }

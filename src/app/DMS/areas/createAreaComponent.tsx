@@ -54,7 +54,7 @@ export function CreateAreaComponent({ onCreated }: { onCreated: () => void }) {
           autoComplete="off"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Marketing"
+          placeholder="Calidad"
           className="w-full h-11 px-3 rounded-md border border-[#DAD6CE] bg-white shadow-soma text-sm text-black placeholder:text-soma-gray outline-none transition-colors focus:border-soma-red"
         />
       </div>

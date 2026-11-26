@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { createSupabaseServerClient } from '@/lib/core/auth/serverClient';
-import type { FolderElements, FoldersProvider } from '../provider/folders.provider';
+import type { FolderElements, FolderSummary, FoldersProvider, UpdateFolderInput } from '../provider/folders.provider';
 
 // INDEX: Error imports
 import { AccessError, AccessErrorCode } from '@/lib/errors/access';
@@ -28,6 +28,9 @@ const FOREIGN_KEY_VIOLATION = '23503';
  * `folders_no_self_parent` y el trigger `folders_prevent_cycle` (ADR-011).
  */
 const CHECK_VIOLATION = '23514';
+
+/** Código de Postgres `no_data_found`. Lo lanza `update_folder` si la carpeta no existe. */
+const NO_DATA_FOUND = 'P0002';
 
 /**
  * Error para un `42501`. El detalle nombra la operación para que en los logs
@@ -278,14 +281,55 @@ class SupabaseFoldersService implements FoldersProvider {
         }
     }
 
-    // TODO(Javier): implementar.
+    /**
+     * Llama al RPC `get_folder_documents`, que hace ambas consultas en Postgres
+     * y decide el acceso con `can_access_documents()`. Así, cuando se restrinja
+     * la lectura, el cambio vive en SQL y no aquí. El RPC ya excluye documentos
+     * con soft delete o con la subida pendiente.
+     *
+     * supabase-js no lanza excepciones: los errores llegan en `error`, por eso
+     * no hay `try/catch`.
+     *
+     * @param folderId - `id` de la carpeta, o `null` para la raíz
+     * @returns subcarpetas y documentos directos de esa carpeta, ordenados por nombre
+     * @throws {AccessError} `AuthorizationFailure` si el RPC responde `42501`
+     *   (sin sesión o `can_access_documents()` lo negó)
+     * @throws {FolderError} `FetchFailed` si el RPC falló por otra razón o no
+     *   devolvió datos
+     * @example
+     * const { folders, documents } = await foldersProvider.getFolderElements(null)
+     */
     async getFolderElements(folderId: string | null): Promise<FolderElements> {
-        throw new FolderError(
-            FolderErrorCode.FetchFailed,
-            `getFolderElements(${folderId}) todavía no está implementado.`,
-            'Ocurrió un error inesperado. Intenta más tarde.',
-            501,
-        );
+        const supabase = await createSupabaseServerClient();
+
+        const { data, error } = await supabase.rpc('get_folder_documents', {
+            p_folder_id: folderId,
+        });
+
+        if (error) {
+            if (error.code === INSUFFICIENT_PRIVILEGE) {
+                throw insufficientPrivilege('getFolderElements', error.message);
+            }
+            throw new FolderError(
+                FolderErrorCode.FetchFailed,
+                `No se pudo leer el contenido de la carpeta ${folderId ?? 'raíz'}: ${error.message}`,
+                'No se pudo cargar la carpeta. Intenta más tarde.',
+                500,
+            );
+        }
+
+        if (!data) {
+            throw new FolderError(
+                FolderErrorCode.FetchFailed,
+                `get_folder_documents(${folderId ?? 'raíz'}) no devolvió datos.`,
+                'No se pudo cargar la carpeta. Intenta más tarde.',
+                500,
+            );
+        }
+
+        // El RPC devuelve `jsonb`, que los tipos generados ven como `Json`.
+        // La forma { folders, documents } la garantiza la función en SQL.
+        return data as unknown as FolderElements;
     }
 
     /**
@@ -295,7 +339,7 @@ class SupabaseFoldersService implements FoldersProvider {
      * @param folderId - `id` de la carpeta
      * @param areaId - `id` del área
      * @throws {AccessError} `AuthorizationFailure` si RLS rechaza el insert
-     * @throws {FolderError} `AssignAreaFailed` si la carpeta o el área no
+     * @tthrows {FolderError} `AssignAreaFailed` si la carpeta o el área no
      *   existen (`23503`) o si el insert falló por otra razón
      * @example
      * await foldersProvider.assignAreaToFolder(folderId, areaId)
@@ -370,6 +414,142 @@ class SupabaseFoldersService implements FoldersProvider {
                 404,
             );
         }
+    }
+
+    /**
+     * Lee `id`, `folder_name` y `parent_id` de todas las carpetas, ordenadas
+     * por nombre. RLS (`folders_select`) decide qué filas se ven.
+     *
+     * @returns todas las carpetas visibles
+     * @throws {AccessError} `AuthorizationFailure` si Postgres responde `42501`
+     * @throws {FolderError} `FetchFailed` si la consulta falló
+     * @example
+     * const folders = await foldersProvider.listAllFolders()
+     */
+    async listAllFolders(): Promise<FolderSummary[]> {
+        const supabase = await createSupabaseServerClient();
+
+        const { data, error } = await supabase
+            .from('folders')
+            .select('id, folder_name, parent_id')
+            .order('folder_name');
+
+        if (error) {
+            if (error.code === INSUFFICIENT_PRIVILEGE) {
+                throw insufficientPrivilege('listAllFolders', error.message);
+            }
+            throw new FolderError(
+                FolderErrorCode.FetchFailed,
+                `No se pudieron listar las carpetas: ${error.message}`,
+                'No se pudieron cargar las carpetas. Intenta más tarde.',
+                500,
+            );
+        }
+
+        return data;
+    }
+
+    /**
+     * Lee los `area_id` de `folder_areas` para una carpeta.
+     *
+     * @param folderId - `id` de la carpeta
+     * @returns ids de sus áreas propias
+     * @throws {AccessError} `AuthorizationFailure` si Postgres responde `42501`
+     * @throws {FolderError} `FetchFailed` si la consulta falló
+     * @example
+     * const areaIds = await foldersProvider.getFolderAreaIds(folderId)
+     */
+    async getFolderAreaIds(folderId: string): Promise<string[]> {
+        const supabase = await createSupabaseServerClient();
+
+        const { data, error } = await supabase
+            .from('folder_areas')
+            .select('area_id')
+            .eq('folder_id', folderId);
+
+        if (error) {
+            if (error.code === INSUFFICIENT_PRIVILEGE) {
+                throw insufficientPrivilege('getFolderAreaIds', error.message);
+            }
+            throw new FolderError(
+                FolderErrorCode.FetchFailed,
+                `No se pudieron leer las áreas de la carpeta ${folderId}: ${error.message}`,
+                'No se pudieron cargar las áreas de la carpeta. Intenta más tarde.',
+                500,
+            );
+        }
+
+        return data.map((row) => row.area_id);
+    }
+
+    /**
+     * Llama al RPC `update_folder`, que en una transacción cambia nombre,
+     * padre y áreas propias. Traduce los códigos de Postgres a mensajes para
+     * el usuario.
+     *
+     * @param folderId - `id` de la carpeta
+     * @param input - nombre, carpeta padre y lista completa de áreas propias
+     * @throws {AccessError} `AuthorizationFailure` si el RPC responde `42501`
+     * @throws {FolderError} `UpdateFailed` si la carpeta no existe (`P0002`),
+     *   si el nombre se repite en el destino (`23505`), si se formaría un
+     *   ciclo (`23514`), si el destino o un área no existen (`23503`), o por
+     *   otro error
+     * @example
+     * await foldersProvider.updateFolder(folderId, { folderName: 'Calidad', parentId: null, areaIds: [] })
+     */
+    async updateFolder(folderId: string, input: UpdateFolderInput): Promise<void> {
+        const supabase = await createSupabaseServerClient();
+
+        const { error } = await supabase.rpc('update_folder', {
+            p_folder_id: folderId,
+            p_folder_name: input.folderName,
+            p_parent_id: input.parentId,
+            p_area_ids: input.areaIds,
+        });
+
+        if (!error) return;
+
+        if (error.code === INSUFFICIENT_PRIVILEGE) {
+            throw insufficientPrivilege('updateFolder', error.message);
+        }
+        if (error.code === NO_DATA_FOUND) {
+            throw new FolderError(
+                FolderErrorCode.UpdateFailed,
+                `updateFolder: no existe la carpeta ${folderId}: ${error.message}`,
+                'No se encontró la carpeta.',
+                404,
+            );
+        }
+        if (error.code === UNIQUE_VIOLATION) {
+            throw new FolderError(
+                FolderErrorCode.UpdateFailed,
+                `updateFolder: nombre duplicado "${input.folderName}" en el padre ${input.parentId}`,
+                'Ya existe una carpeta con ese nombre en esa ubicación.',
+                409,
+            );
+        }
+        if (error.code === CHECK_VIOLATION) {
+            throw new FolderError(
+                FolderErrorCode.UpdateFailed,
+                `updateFolder: mover ${folderId} dentro de ${input.parentId} formaría un ciclo: ${error.message}`,
+                'No puedes mover una carpeta dentro de sí misma o de una de sus subcarpetas.',
+                409,
+            );
+        }
+        if (error.code === FOREIGN_KEY_VIOLATION) {
+            throw new FolderError(
+                FolderErrorCode.UpdateFailed,
+                `updateFolder: no existe el destino ${input.parentId} o un área de [${input.areaIds.join(', ')}]: ${error.message}`,
+                'No se encontró la carpeta destino o alguna de las áreas.',
+                404,
+            );
+        }
+        throw new FolderError(
+            FolderErrorCode.UpdateFailed,
+            `No se pudo editar la carpeta ${folderId}: ${error.message}`,
+            'No se pudo guardar la carpeta. Intenta más tarde.',
+            500,
+        );
     }
 }
 

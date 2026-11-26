@@ -15,15 +15,60 @@
 
 import type { Tables } from '@/lib/core/database.types';
 
-export type Folder = Pick<Tables<'folders'>, 'id' | 'folder_name' | 'parent_id'>;
+export type Folder = Pick<Tables<'folders'>, 'id' | 'folder_name' | 'parent_id'> & {
+    /**
+     * Nombres de las áreas de la carpeta: las propias más las heredadas de sus
+     * ancestros (ADR-011). Sin repetidos, ordenados; vacío si no tiene.
+     */
+    tags: string[];
+};
 
 export type FolderDocument = Pick<
     Tables<'documents'>,
-    'id' | 'name' | 'description' | 'file_type' | 'file_size' | 'uploaded_at'
->;
+    | 'id'
+    | 'name'
+    | 'description'
+    | 'file_type'
+    | 'file_size'
+    | 'uploaded_at'
+    | 'folder_id'
+> & {
+    /**
+     * Nombres de las áreas del documento: las propias (`document_areas`) más
+     * las heredadas de su carpeta y sus ancestros (ADR-011). Sin repetidos,
+     * ordenados; vacío si no tiene.
+     */
+    tags: string[];
+};
 
-/** Contenido directo de una carpeta: sus subcarpetas y sus documentos. */
+/** Un paso de la ruta de una carpeta (breadcrumb). */
+export type FolderPathItem = Pick<Tables<'folders'>, 'id' | 'folder_name'>;
+
+/**
+ * Carpeta sin tags, para listar todas las carpetas (ej. el selector de
+ * destino al mover). Con `parent_id` se arma la ruta completa.
+ */
+export type FolderSummary = Pick<Tables<'folders'>, 'id' | 'folder_name' | 'parent_id'>;
+
+/** Datos de "Editar carpeta". Reemplazan nombre, ubicación y áreas propias. */
+export interface UpdateFolderInput {
+    folderName: string;
+    /** `id` de la carpeta destino, o `null` para la raíz. */
+    parentId: string | null;
+    /**
+     * Lista completa de áreas propias: las que no vengan se quitan. Las
+     * heredadas de los ancestros no cuentan aquí.
+     */
+    areaIds: string[];
+}
+
+/** Contenido directo de una carpeta, más su ruta para el breadcrumb. */
 export interface FolderElements {
+    /**
+     * La carpeta actual y sus ancestros, de la raíz hacia abajo: el último
+     * elemento es la carpeta actual. Vacío en la raíz o si la carpeta no existe.
+     */
+    path: FolderPathItem[];
     folders: Folder[];
     documents: FolderDocument[];
 }
@@ -86,11 +131,15 @@ export interface FoldersProvider {
     deleteFolder(folderId: string): Promise<void>;
 
     /**
-     * Devuelve el contenido directo de una carpeta: sus subcarpetas y sus
-     * documentos. No baja a niveles más profundos.
+     * Devuelve el contenido directo de una carpeta (sus subcarpetas y sus
+     * documentos, con sus tags) y la ruta de la carpeta. No baja a niveles
+     * más profundos.
      *
      * @param folderId - `id` de la carpeta, o `null` para la raíz
-     * @returns subcarpetas y documentos de esa carpeta
+     * @returns ruta, subcarpetas y documentos de esa carpeta. Si `folderId` no
+     *   existe, las tres listas llegan vacías
+     * @throws {AccessError} `AuthorizationFailure` si no hay sesión o no tiene
+     *   acceso a documentos
      * @throws {FolderError} `FetchFailed` si la consulta falló
      * @example
      * const { folders, documents } = await foldersProvider.getFolderElements(null)
@@ -123,4 +172,43 @@ export interface FoldersProvider {
      * await foldersProvider.removeAreaFromFolder(folderId, areaId)
      */
     removeAreaFromFolder(folderId: string, areaId: string): Promise<void>;
+
+    /**
+     * Devuelve todas las carpetas, sin tags, ordenadas por nombre.
+     *
+     * @returns todas las carpetas que el usuario puede leer
+     * @throws {AccessError} `AuthorizationFailure` si Postgres responde `42501`
+     * @throws {FolderError} `FetchFailed` si la consulta falló
+     * @example
+     * const folders = await foldersProvider.listAllFolders()
+     */
+    listAllFolders(): Promise<FolderSummary[]>;
+
+    /**
+     * Devuelve los ids de las áreas propias de una carpeta (sin las heredadas).
+     *
+     * @param folderId - `id` de la carpeta
+     * @returns ids de sus áreas propias; vacío si no tiene
+     * @throws {AccessError} `AuthorizationFailure` si Postgres responde `42501`
+     * @throws {FolderError} `FetchFailed` si la consulta falló
+     * @example
+     * const areaIds = await foldersProvider.getFolderAreaIds(folderId)
+     */
+    getFolderAreaIds(folderId: string): Promise<string[]>;
+
+    /**
+     * Cambia nombre, ubicación y áreas propias de una carpeta en una sola
+     * transacción (RPC `update_folder`): si algo falla, no se guarda nada.
+     *
+     * @param folderId - `id` de la carpeta
+     * @param input - nombre, carpeta padre y lista completa de áreas propias
+     * @throws {AccessError} `AuthorizationFailure` si quien llama no es admin
+     * @throws {FolderError} `UpdateFailed` si la carpeta no existe, si el
+     *   destino ya tiene una carpeta con ese nombre, si el destino es la misma
+     *   carpeta o una subcarpeta, si el destino o un área no existen, o por
+     *   otro error
+     * @example
+     * await foldersProvider.updateFolder(folderId, { folderName: 'Calidad', parentId: null, areaIds: [areaId] })
+     */
+    updateFolder(folderId: string, input: UpdateFolderInput): Promise<void>;
 }

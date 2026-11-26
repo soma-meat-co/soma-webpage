@@ -2,7 +2,7 @@
 
 import { areasProvider } from "@/lib/core/areas/service/area.service";
 import type { Area } from "@/lib/core/areas/provider/areas.provider";
-import { AppError } from "@/lib/errors/base";
+import { handleError } from "@/lib/errors/handleError";
 
 export type AreaActionResult =
     | {ok: true}
@@ -11,26 +11,6 @@ export type AreaActionResult =
 export type FetchAreasResult =
     | {ok: true; areas: Area[]}
     | {ok: false; code: string; message: string};
-
-/**
- * Convierte cualquier error del service en la respuesta `{ok: false}` de una
- * action. El detalle va a los logs del servidor; al cliente solo llega el
- * mensaje genérico.
- *
- * @param action - nombre de la action, para el log
- * @param err - error capturado
- * @returns la respuesta de error para el cliente
- * @example
- * catch (err) { return toActionError('createArea', err) }
- */
-function toActionError(action: string, err: unknown): {ok: false; code: string; message: string} {
-    if (err instanceof AppError) {
-        console.error(`[${action}] ${err.code} (${err.statusCode}): ${err.detail}`);
-        return {ok: false, code: err.code, message: err.genericMessage};
-    }
-    console.error(`[${action}] error inesperado: `, err);
-    return {ok: false, code: 'UNEXPECTED_ERROR', message: 'Ocurrió un error inesperado. Intenta más tarde.'};
-}
 
 /**
  * Crea un área.
@@ -45,7 +25,7 @@ export async function createArea(name: string): Promise<AreaActionResult> {
         await areasProvider.createNewArea(name);
         return {ok: true};
     } catch (err) {
-        return toActionError('createArea', err);
+        return {ok: false, ...handleError('createArea', err)};
     }
 }
 
@@ -63,7 +43,7 @@ export async function editArea(id: string, newName: string): Promise<AreaActionR
         await areasProvider.editArea(id, newName);
         return {ok: true};
     } catch (err) {
-        return toActionError('editArea', err);
+        return {ok: false, ...handleError('editArea', err)};
     }
 }
 
@@ -80,7 +60,7 @@ export async function deleteArea(id: string): Promise<AreaActionResult> {
         await areasProvider.deleteArea(id);
         return {ok: true};
     } catch (err) {
-        return toActionError('deleteArea', err);
+        return {ok: false, ...handleError('deleteArea', err)};
     }
 }
 
@@ -96,6 +76,6 @@ export async function fetchAllAreas(): Promise<FetchAreasResult> {
         const areas = await areasProvider.fetchAllAreas();
         return {ok: true, areas};
     } catch (err) {
-        return toActionError('fetchAllAreas', err);
+        return {ok: false, ...handleError('fetchAllAreas', err)};
     }
 }

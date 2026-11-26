@@ -2,7 +2,7 @@ import 'server-only';
 
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { createSupabaseServerClient } from '@/lib/core/auth/serverClient';
-import type { AdminProvider, InviteUserInput, InvitedUser } from '../provider/admin.provider';
+import type { AdminProvider, EditUserInput, InviteUserInput, InvitedUser, ManagedUser } from '../provider/admin.provider';
 
 // INDEX: Error imports
 import { AppError } from '@/lib/errors/base';
@@ -63,6 +63,40 @@ async function toAppError(functionName: string, error: unknown): Promise<AppErro
     return new AdminError(AdminErrorCode.InviteFailed, detail, 'No se pudo completar la operación. Intenta más tarde.', 500);
 }
 
+/** Código de Postgres `insufficient_privilege`: quien llama no es admin. */
+const INSUFFICIENT_PRIVILEGE = '42501';
+
+/** Código de Postgres `no_data_found`: el usuario no existe. */
+const NO_DATA_FOUND = 'P0002';
+
+/** Código de Postgres `invalid_parameter_value`: `remove_user` sobre uno mismo. */
+const INVALID_PARAMETER_VALUE = '22023';
+
+/**
+ * Código de Postgres cuando falla una llave foránea: el área no existe
+ * (`edit_user_data`) o el usuario tiene documentos, carpetas o áreas a su
+ * nombre (`remove_user`).
+ */
+const FOREIGN_KEY_VIOLATION = '23503';
+
+/**
+ * Error para un `42501` de los RPC de usuarios.
+ *
+ * @param action - nombre de la operación, para los logs
+ * @param message - `error.message` de Postgres
+ * @returns el `AccessError` listo para lanzar
+ * @example
+ * if (error.code === INSUFFICIENT_PRIVILEGE) throw insufficientPrivilege('getAllUsers', error.message)
+ */
+function insufficientPrivilege(action: string, message: string): AccessError {
+    return new AccessError(
+        AccessErrorCode.AuthorizationFailure,
+        `${action}: permisos insuficientes (42501). ¿Se llamó sin sesión de admin? ${message}`,
+        'No cuentas con los permisos necesarios para esta acción.',
+        403,
+    );
+}
+
 class SupabaseAdminService implements AdminProvider {
     /**
      * Invita a un usuario nuevo a través de la Edge Function `invite-user-as-admin`.
@@ -109,6 +143,154 @@ class SupabaseAdminService implements AdminProvider {
         }
 
         return data;
+    }
+
+    /**
+     * Llama al RPC `get_all_users` (SECURITY DEFINER, valida `is_admin()`) y
+     * pasa cada fila a {@link ManagedUser}.
+     *
+     * @returns todos los usuarios, ordenados por nombre
+     * @throws {AccessError} `AuthorizationFailure` si el RPC responde `42501`
+     * @throws {AdminError} `ListUsersFailed` si la consulta falla por otra razón
+     * @example
+     * const users = await adminProvider.getAllUsers()
+     */
+    async getAllUsers(): Promise<ManagedUser[]> {
+        const supabase = await createSupabaseServerClient();
+
+        // TODO: paginación. Hoy trae todos los usuarios; cuando sean muchos,
+        // pasar límite y página (o cursor) al RPC.
+        const { data, error } = await supabase.rpc('get_all_users');
+
+        if (error) {
+            if (error.code === INSUFFICIENT_PRIVILEGE) {
+                throw insufficientPrivilege('getAllUsers', error.message);
+            }
+            throw new AdminError(
+                AdminErrorCode.ListUsersFailed,
+                `getAllUsers: ${error.code} ${error.message}`,
+                'No se pudo cargar la lista de usuarios. Intenta más tarde.',
+                500,
+            );
+        }
+
+        return data.map((row) => ({
+            id: row.id,
+            email: row.email,
+            nombre: row.nombre,
+            apellidoPaterno: row.apellido_paterno,
+            apellidoMaterno: row.apellido_materno,
+            role: row.role,
+            areaId: row.area_id,
+            areaName: row.area_name,
+            activatedAt: row.activated_at,
+            createdAt: row.created_at,
+        }));
+    }
+
+    /**
+     * Llama al RPC `edit_user_data` (SECURITY DEFINER, valida `is_admin()`).
+     *
+     * @param userId - `id` del usuario
+     * @param input - nombre, apellidos y área (`null` para dejarlo sin área)
+     * @throws {AccessError} `AuthorizationFailure` si el RPC responde `42501`
+     * @throws {AdminError} `UpdateUserFailed` si el usuario no existe (`P0002`),
+     *   si el área no existe (`23503`) o por otro error
+     * @example
+     * await adminProvider.editUserData(userId, { nombre: "Ana", apellidoPaterno: "López", apellidoMaterno: null, areaId })
+     */
+    async editUserData(userId: string, input: EditUserInput): Promise<void> {
+        const supabase = await createSupabaseServerClient();
+
+        const { error } = await supabase.rpc('edit_user_data', {
+            p_user_id: userId,
+            p_nombre: input.nombre,
+            p_apellido_paterno: input.apellidoPaterno,
+            p_apellido_materno: input.apellidoMaterno,
+            p_area_id: input.areaId,
+        });
+
+        if (!error) return;
+
+        if (error.code === INSUFFICIENT_PRIVILEGE) {
+            throw insufficientPrivilege('editUserData', error.message);
+        }
+        if (error.code === NO_DATA_FOUND) {
+            throw new AdminError(
+                AdminErrorCode.UpdateUserFailed,
+                `editUserData: no existe el usuario ${userId}: ${error.message}`,
+                'No se encontró el usuario.',
+                404,
+            );
+        }
+        if (error.code === FOREIGN_KEY_VIOLATION) {
+            throw new AdminError(
+                AdminErrorCode.UpdateUserFailed,
+                `editUserData: el área ${input.areaId} no existe: ${error.message}`,
+                'El área seleccionada ya no existe.',
+                409,
+            );
+        }
+        throw new AdminError(
+            AdminErrorCode.UpdateUserFailed,
+            `editUserData: ${error.code} ${error.message}`,
+            'No se pudieron guardar los cambios. Intenta más tarde.',
+            500,
+        );
+    }
+
+    /**
+     * Llama al RPC `remove_user` (SECURITY DEFINER, valida `is_admin()`), que
+     * borra la cuenta de `auth.users` y su perfil en cascada.
+     *
+     * @param userId - `id` del usuario
+     * @throws {AccessError} `AuthorizationFailure` si el RPC responde `42501`
+     * @throws {AdminError} `RemoveUserFailed` si el usuario no existe (`P0002`),
+     *   si es quien llama (`22023`), si tiene documentos, carpetas o áreas a su
+     *   nombre (`23503`) o por otro error
+     * @example
+     * await adminProvider.removeUser(userId)
+     */
+    async removeUser(userId: string): Promise<void> {
+        const supabase = await createSupabaseServerClient();
+
+        const { error } = await supabase.rpc('remove_user', { p_user_id: userId });
+
+        if (!error) return;
+
+        if (error.code === INSUFFICIENT_PRIVILEGE) {
+            throw insufficientPrivilege('removeUser', error.message);
+        }
+        if (error.code === NO_DATA_FOUND) {
+            throw new AdminError(
+                AdminErrorCode.RemoveUserFailed,
+                `removeUser: no existe el usuario ${userId}: ${error.message}`,
+                'No se encontró el usuario.',
+                404,
+            );
+        }
+        if (error.code === INVALID_PARAMETER_VALUE) {
+            throw new AdminError(
+                AdminErrorCode.RemoveUserFailed,
+                `removeUser: el admin intentó eliminarse a sí mismo (${userId})`,
+                'No puedes eliminar tu propia cuenta.',
+                400,
+            );
+        }
+        if (error.code === FOREIGN_KEY_VIOLATION) {
+            throw new AdminError(
+                AdminErrorCode.RemoveUserFailed,
+                `removeUser: ${userId} tiene registros que lo referencian: ${error.message}`,
+                'No se puede eliminar: el usuario tiene documentos, carpetas o áreas a su nombre.',
+                409,
+            );
+        }
+        throw new AdminError(
+            AdminErrorCode.RemoveUserFailed,
+            `removeUser: ${error.code} ${error.message}`,
+            'No se pudo eliminar el usuario. Intenta más tarde.',
+            500,
+        );
     }
 }
 
